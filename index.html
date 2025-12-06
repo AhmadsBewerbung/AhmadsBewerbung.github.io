@@ -1,916 +1,237 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FRONTRANGE — Battle Royale Prototype</title>
+<meta charset="UTF-8" />
+<title>FrontRange 3D Shooter Prototype</title>
 <style>
-  :root{--bg:#081018;--panel:rgba(255,255,255,0.03);--accent:#7ee7ff;--muted:#9aa6b2;}
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#041018,#071526);font-family:Inter,Segoe UI,Arial;}
-  #wrap{display:flex;align-items:flex-start;justify-content:center;padding:18px;}
-  canvas{background:#071018;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.6);display:block;}
-  .ui{position:fixed;left:20px;top:20px;color:#dff6ff}
-  .ui .title{font-weight:700;color:var(--accent);font-size:18px;margin-bottom:8px}
-  .hud{position:fixed;right:20px;bottom:20px;color:#dff6ff;width:320px}
-  .panel{background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(4px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
-  .small{font-size:13px;color:var(--muted)}
-  .meter{height:12px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;margin-top:6px}
-  .meter > i{display:block;height:100%;}
-  #minimap{position:fixed;right:20px;top:20px;width:180px;height:180px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.04)}
-  .center{display:flex;justify-content:center;align-items:center}
-  .btn{background:linear-gradient(180deg,#7ee7ff,#9b7dff);color:#022;padding:8px 10px;border-radius:8px;margin-top:8px;display:inline-block;font-weight:600;cursor:pointer}
-  .legend{font-size:13px;color:var(--muted);margin-top:8px}
-  #overlay{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-  #menu{pointer-events:auto}
-  @media (max-width:900px){canvas{width:92vw;height:60vh}}
+  body { margin: 0; overflow: hidden; background: #111; }
+  #hpDisplay {
+    position: absolute;
+    top: 20px; left: 20px;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.5);
+    color: #0f0;
+    font-size: 28px;
+    font-family: Arial, sans-serif;
+    border: 2px solid #0f0;
+    border-radius: 8px;
+  }
+  #instructions {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    text-align: center;
+    font-family: Arial;
+  }
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="c" width="1200" height="720"></canvas></div>
+<div id="hpDisplay">HP: 300</div>
+<div id="instructions">Click to Lock Mouse<br>WASD = Move · SPACE = Jump · Left Click = Shoot</div>
 
-<div class="ui panel" style="left:20px;top:20px;position:fixed">
-  <div class="title">FRONTRANGE — Prototype</div>
-  <div class="small">HP: <span id="hpDisp">100</span> • Shield: <span id="shDisp">0</span></div>
-  <div style="margin-top:8px">Ammo: <span id="ammoDisp">—</span></div>
-  <div style="margin-top:6px">Stamina: <span id="stDisp">100</span></div>
-  <div style="margin-top:8px" class="legend">Controls: WASD • Mouse Aim • Click Fire • R Reload • 1/2 Swap • E Pickup • G Grenade</div>
-</div>
-
-<div id="minimap" class="panel"></div>
-
-<div class="hud panel" id="rightPanel">
-  <div style="font-weight:700;color:var(--accent)">MATCH INFO</div>
-  <div class="small" id="matchText">Players: 1 • Bots: 16</div>
-  <div class="meter"><i id="stormMeter" style="width:100%;background:linear-gradient(90deg,#ff8a8a,#ff3d3d)"></i></div>
-  <div style="margin-top:8px">
-    <div style="font-weight:700">Inventory</div>
-    <div id="inv" class="small">Slot1: Pistol • Slot2: Knife</div>
-    <div style="margin-top:8px"><button id="restartBtn" class="btn">Restart</button></div>
-  </div>
-</div>
-
-<div id="overlay"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-/* ======================================================
-   FRONTRANGE — Enhanced Prototype (single-file)
-   - Top-down Battle Royale prototype with many systems
-   - Paste into index.html and open in a browser
-   ====================================================== */
 
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const minimapEl = document.getElementById('minimap');
-const hpDisp = document.getElementById('hpDisp');
-const shDisp = document.getElementById('shDisp');
-const ammoDisp = document.getElementById('ammoDisp');
-const stDisp = document.getElementById('stDisp');
-const stormMeter = document.getElementById('stormMeter');
-const matchText = document.getElementById('matchText');
-const invEl = document.getElementById('inv');
-const restartBtn = document.getElementById('restartBtn');
+// ------------------------------------------------------
+// BASIC THREE.JS SETUP
+// ------------------------------------------------------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x222222);
 
-restartBtn.onclick = ()=> initGame();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
 
-let W = canvas.width, H = canvas.height;
-let keys = {}, mouse = {x: W/2, y: H/2, down:false};
-window.addEventListener('keydown', e=> keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e=> keys[e.key.toLowerCase()] = false);
-canvas.addEventListener('mousemove', e=>{
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = (e.clientX - rect.left) * (canvas.width/rect.width);
-  mouse.y = (e.clientY - rect.top) * (canvas.height/rect.height);
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// ------------------------------------------------------
+// LIGHTING
+// ------------------------------------------------------
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(50, 100, 50);
+scene.add(light);
+
+const ambient = new THREE.AmbientLight(0x888888);
+scene.add(ambient);
+
+// ------------------------------------------------------
+// PLAYER
+// ------------------------------------------------------
+let playerHP = 300;
+
+const playerGeometry = new THREE.BoxGeometry(2, 4, 2);
+const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x00aaff });
+const player = new THREE.Mesh(playerGeometry, playerMaterial);
+player.position.set(0, 2, 0);
+scene.add(player);
+
+camera.position.set(0, 5, -10);
+camera.lookAt(player.position);
+
+// Movement
+let keys = {};
+
+// ------------------------------------------------------
+// FLOOR
+// ------------------------------------------------------
+const floorGeo = new THREE.PlaneGeometry(300, 300);
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// ------------------------------------------------------
+// SHOOTING
+// ------------------------------------------------------
+let bullets = [];
+
+function shoot() {
+  const bulletGeo = new THREE.SphereGeometry(0.3);
+  const bulletMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+  const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+
+  bullet.position.copy(player.position);
+  bullet.position.y += 1.5;
+
+  // bullet direction is where camera looks
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+
+  bullet.userData.velocity = dir.clone().multiplyScalar(2);
+  bullets.push(bullet);
+  scene.add(bullet);
+}
+
+window.addEventListener("mousedown", () => {
+  shoot();
 });
-canvas.addEventListener('mousedown', e=> mouse.down=true);
-canvas.addEventListener('mouseup', e=> mouse.down=false);
 
-// WebAudio for simple SFX
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function beep(freq=440, duration=0.08, type='sine', vol=0.05){
-  try{
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.value = vol;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    setTimeout(()=>{ o.stop(); }, duration*1000);
-  }catch(e){}
+// ------------------------------------------------------
+// ENEMY BOTS
+// ------------------------------------------------------
+const enemies = [];
+
+function spawnEnemy(x, z) {
+  const enemyGeo = new THREE.BoxGeometry(2, 4, 2);
+  const enemyMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+  const enemy = new THREE.Mesh(enemyGeo, enemyMat);
+  enemy.position.set(x, 2, z);
+  enemy.userData.hp = 100;
+  enemies.push(enemy);
+  scene.add(enemy);
 }
 
-// Utility
-function rand(min,max){ return Math.random()*(max-min)+min; }
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+// Spawn 5 bots
+spawnEnemy(30, 30);
+spawnEnemy(-30, 20);
+spawnEnemy(20, -25);
+spawnEnemy(-40, -40);
+spawnEnemy(10, 50);
 
-// Game world
-const WORLD = { w: 4000, h: 4000 }; // big map, camera follows player
-let gameState;
-
-function initGame(){
-  gameState = {
-    time:0,
-    players: [],
-    bots: [],
-    bullets: [],
-    grenades: [],
-    chests: [],
-    pickups: [],
-    storm: {
-      center: {x: WORLD.w/2, y: WORLD.h/2},
-      radius: Math.max(WORLD.w,WORLD.h)/2,
-      targetRadius: 300,
-      shrinkStart: 10, // seconds
-      shrinkRate: 0.2
-    },
-    supplyDrop: null,
-    killed:0,
-    maxBots: 16
-  };
-
-  // Player
-  const player = createPlayer(WORLD.w/2 + rand(-200,200), WORLD.h/2 + rand(-200,200), true);
-  gameState.players.push(player);
-
-  // spawn bots
-  for(let i=0;i<gameState.maxBots;i++){
-    let b = createPlayer(rand(100,WORLD.w-100), rand(100,WORLD.h-100), false);
-    b.isBot = true;
-    equipRandomLoot(b, true);
-    gameState.bots.push(b);
-  }
-
-  // spawn chests
-  for(let i=0;i<60;i++){
-    gameState.chests.push({x: rand(200, WORLD.w-200), y: rand(200,WORLD.h-200), opened:false});
-  }
-
-  // initial pickups
-  for(let i=0;i<80;i++){
-    spawnPickup(rand(100,WORLD.w-100), rand(100,WORLD.h-100));
-  }
-
-  // initial loot on player
-  equipPlayerStarter(gameState.players[0]);
-
-  gameState.supplyDrop = scheduleSupplyDrop(12); // supply drop in 12s
-
-  beep(800,0.08,'sine',0.06);
-}
-
-// Player factory
-function createPlayer(x,y,isLocal=false){
-  return {
-    id: Math.random().toString(36).slice(2,9),
-    x,y,
-    vx:0, vy:0,
-    r: 14,
-    hp: 100,
-    shield: 0,
-    maxShield: 75,
-    speed: 2.4,
-    runSpeed: 4.2,
-    stamina: 100,
-    staminaRegen: 10,
-    dashCooldown: 0,
-    isLocal,
-    isBot:false,
-    aimAngle:0,
-    inventory: {slot1: null, slot2: {type:'knife', name:'Knife', ammo:Infinity}, grenades:1},
-    activeSlot: 'slot1',
-    reloadTime: 0,
-    fireCooldown: 0,
-    alive: true,
-    lastDamage: 0
-  };
-}
-
-// Equip starter loadout
-function equipPlayerStarter(p){
-  p.inventory.slot1 = {type:'pistol', name:'Pistol', ammo:12, mag:12, magSize:12, fireRate: 0.28, damage:18, range:700, recoil:1.2, spread:4, rarity:'common'};
-  p.inventory.slot2 = {type:'knife', name:'Knife', ammo:Infinity, mag:Infinity, fireRate:0.5, damage:18, range:36, rarity:'common'};
-  p.inventory.grenades = 1;
-  p.shield = 0;
-}
-
-// Equip bot with random loot
-function equipRandomLoot(b,preferWeapons=false){
-  const weaponPool = [
-    {type:'pistol', name:'Pistol', magSize:12, fireRate:0.28, damage:18, spread:4, range:700, rarity:'common'},
-    {type:'ar', name:'Assault Rifle', magSize:30, fireRate:0.09, damage:12, spread:6, range:1000, rarity:'adv'},
-    {type:'sg', name:'Shotgun', magSize:6, fireRate:0.9, damage:8, spread:18, pellets:8, range:260, rarity:'special'},
-    {type:'sn', name:'Sniper', magSize:5, fireRate:1.3, damage:78, spread:0.8, range:2400, rarity:'proto'}
-  ];
-  b.inventory.slot1 = JSON.parse(JSON.stringify(weaponPool[Math.floor(Math.random()*weaponPool.length)]));
-  b.inventory.slot1.ammo = b.inventory.slot1.magSize;
-  b.inventory.slot2 = {type:'knife', name:'Knife', ammo:Infinity, mag:Infinity, fireRate:0.5, damage:18};
-  b.inventory.grenades = Math.random()<0.3?1:0;
-  b.shield = Math.random()<0.5?25:0;
-}
-
-// Spawn pickup (ammo, med, shield, grenade)
-function spawnPickup(x,y){
-  const types = ['ammo','med','shield','grenade','ar','pistol','sg','sn'];
-  const t = types[Math.floor(Math.random()*types.length)];
-  gameState.pickups.push({x,y,type:t,ttl: 99999});
-}
-
-// Supply drop scheduler
-function scheduleSupplyDrop(seconds){
-  return {timer: seconds, active:false, x: rand(500,WORLD.w-500), y: rand(500,WORLD.h-500), crate:null};
-}
-
-// Weapon firing behavior
-function fireWeapon(shooter, weapon){
-  if(!weapon) return;
-  if(shooter.reloadTime>0 || shooter.fireCooldown>0) return;
-
-  if(weapon.type==='knife'){
-    // melee instant hit in front
-    shooter.fireCooldown = weapon.fireRate;
-    // check bots in range
-    const hits = getEntitiesInArc(shooter, weapon.range, 60);
-    for(const e of hits){
-      if(e===shooter) continue;
-      if(e.alive){
-        applyDamage(e, weapon.damage, shooter);
-        beep(300,0.04,'square',0.04);
-      }
+// ------------------------------------------------------
+// BOT AI (simple follow)
+// ------------------------------------------------------
+function updateEnemies() {
+  enemies.forEach(enemy => {
+    const toPlayer = new THREE.Vector3().subVectors(player.position, enemy.position);
+    toPlayer.y = 0;
+    if (toPlayer.length() > 1) {
+      toPlayer.normalize();
+      enemy.position.add(toPlayer.multiplyScalar(0.05));
     }
-    return;
-  }
-
-  if(weapon.ammo<=0){
-    // click empty
-    beep(200,0.05,'sine',0.04);
-    shooter.fireCooldown = 0.12;
-    return;
-  }
-
-  // consume ammo, set cooldown
-  weapon.ammo--;
-  shooter.fireCooldown = weapon.fireRate;
-  beep(1200,0.03,'triangle',0.04);
-
-  // bullet behavior
-  if(weapon.type==='sg'){ // shotgun: multiple pellets
-    const pellets = weapon.pellets || 6;
-    for(let i=0;i<pellets;i++){
-      const spread = (Math.random()-0.5)*weapon.spread;
-      createBullet(shooter.x, shooter.y, shooter.aimAngle + (spread*Math.PI/180), weapon.range, weapon.damage, shooter, true);
-    }
-  } else {
-    const spread = (Math.random()-0.5)*weapon.spread;
-    createBullet(shooter.x, shooter.y, shooter.aimAngle + (spread*Math.PI/180), weapon.range, weapon.damage, shooter, false);
-  }
-}
-
-// Create bullet entity
-function createBullet(x,y, angle, range, damage, owner, isPellet=false){
-  const speed = 18;
-  const bx = x + Math.cos(angle)*20;
-  const by = y + Math.sin(angle)*20;
-  gameState.bullets.push({
-    x: bx, y: by, angle, dx: Math.cos(angle)*speed, dy: Math.sin(angle)*speed,
-    travelled:0, maxRange: range, damage, owner, life: 2.5, isPellet
   });
 }
 
-// Grenade throw
-function throwGrenade(shooter){
-  if(shooter.inventory.grenades <= 0) {
-    beep(180,0.05,'sine',0.05);
-    return;
-  }
-  shooter.inventory.grenades--;
-  const power = 10;
-  const angle = shooter.aimAngle;
-  const g = {
-    x: shooter.x, y: shooter.y,
-    vx: Math.cos(angle)*power + rand(-1,1), vy: Math.sin(angle)*power + rand(-1,1),
-    life: 2.4, radius: 6, thrower: shooter, arcing: true, explodeIn: 2200
-  };
-  gameState.grenades.push(g);
-  beep(600,0.05,'sine',0.06);
-}
+// ------------------------------------------------------
+// MOUSE CAMERA LOOK
+// ------------------------------------------------------
+let pitch = 0;
+let yaw = 0;
 
-// Damage application
-function applyDamage(target, amount, source){
-  if(!target.alive) return;
-  // shield absorbs
-  if(target.shield > 0){
-    const s = Math.min(target.shield, amount);
-    target.shield -= s;
-    amount -= s;
-  }
-  target.hp -= amount;
-  target.lastDamage = Date.now();
-  if(target.hp <= 0){
-    target.alive = false;
-    onDeath(target, source);
-  }
-}
-
-// What happens on death
-function onDeath(dead, source){
-  if(dead.isBot){
-    gameState.killed++;
-    // drop loot: chest spawn
-    gameState.chests.push({x: dead.x, y: dead.y, opened:false});
-  }
-  // if player died
-  if(dead.isLocal){
-    // game over if local player dies
-    // show overlay
-  }
-}
-
-// Get entities in front arc (for knife)
-function getEntitiesInArc(shooter, range, arcDeg){
-  const list = [];
-  const arc = arcDeg * Math.PI/180;
-  for(const b of [...gameState.bots, ...gameState.players]){
-    if(!b.alive) continue;
-    if(b===shooter) continue;
-    const dx = b.x-shooter.x, dy = b.y-shooter.y;
-    const d = Math.hypot(dx,dy);
-    if(d > range) continue;
-    const a = Math.atan2(dy,dx);
-    let diff = Math.abs(angleDiff(a, shooter.aimAngle));
-    if(diff <= arc/2) list.push(b);
-  }
-  return list;
-}
-
-// Angle diff
-function angleDiff(a,b){
-  let d = a-b;
-  while(d > Math.PI) d -= Math.PI*2;
-  while(d < -Math.PI) d += Math.PI*2;
-  return d;
-}
-
-// Pickup interaction (E)
-function tryPickup(player){
-  // chests
-  for(const chest of gameState.chests){
-    if(!chest.opened && Math.hypot(player.x-chest.x, player.y-chest.y) < 48){
-      // open chest: spawn items
-      chest.opened = true;
-      // give random high-tier weapon or resources
-      const r = Math.random();
-      if(r<0.3){
-        player.inventory.slot1 = {type:'ar', name:'Assault Rifle', ammo:30, magSize:30, fireRate:0.09, damage:12, spread:6, range:1000};
-      }else if(r<0.55){
-        player.inventory.slot1 = {type:'sg', name:'Shotgun', ammo:6, magSize:6, fireRate:0.9, damage:8, spread:18, pellets:8, range:260};
-      }else if(r<0.75){
-        player.shield = Math.min(player.maxShield, player.shield + 50);
-      }else{
-        player.hp = Math.min(100, player.hp + 40);
-      }
-      beep(1200,0.06,'square',0.08);
-      return;
-    }
-  }
-  // pickups on ground
-  for(const p of gameState.pickups){
-    if(Math.hypot(player.x-p.x, player.y-p.y) < 28){
-      if(p.type === 'med'){ player.hp = Math.min(100, player.hp + 35); }
-      else if(p.type === 'shield'){ player.shield = Math.min(player.maxShield, player.shield + 50); }
-      else if(p.type === 'grenade'){ player.inventory.grenades = (player.inventory.grenades||0) + 1; }
-      else if(p.type === 'ammo'){ // give bullets for current weapon
-        const w = player.inventory[player.activeSlot];
-        if(w && w.magSize) { w.ammo = Math.min((w.ammo||0)+Math.floor(w.magSize*0.6), w.magSize*3); }
-      } else if(['ar','pistol','sg','sn'].includes(p.type)){
-        // drop into slot1
-        player.inventory.slot1 = weaponFromType(p.type);
-        player.inventory.slot1.ammo = player.inventory.slot1.magSize;
-      }
-      p.collected = true;
-      beep(1200,0.05,'sine',0.05);
-    }
-  }
-  gameState.pickups = gameState.pickups.filter(p=>!p.collected);
-}
-
-// Basic weapon-from-type
-function weaponFromType(t){
-  if(t==='ar') return {type:'ar', name:'Assault Rifle', ammo:30, magSize:30, fireRate:0.09, damage:12, spread:6, range:1000};
-  if(t==='pistol') return {type:'pistol', name:'Pistol', ammo:12, magSize:12, fireRate:0.28, damage:18, spread:4, range:700};
-  if(t==='sg') return {type:'sg', name:'Shotgun', ammo:6, magSize:6, fireRate:0.9, damage:8, spread:18, pellets:8, range:260};
-  if(t==='sn') return {type:'sn', name:'Sniper', ammo:5, magSize:5, fireRate:1.3, damage:78, spread:0.6, range:2400};
-  return null;
-}
-
-// Spawn a pickup chest or item at coords
-function spawnPickupAt(x,y){
-  spawnPickup(x,y);
-}
-
-// Game update
-let lastTime = 0;
-function update(ts){
-  if(!lastTime) lastTime = ts;
-  const dt = Math.min(40, ts - lastTime) / 1000;
-  lastTime = ts;
-  gameState.time += dt;
-
-  // shrink storm after time
-  if(gameState.time > gameState.storm.shrinkStart){
-    // move target center slightly towards random offset (simulate circle moving)
-    gameState.storm.radius -= gameState.storm.shrinkRate;
-    gameState.storm.radius = Math.max(120, gameState.storm.radius);
-  }
-
-  // supply drop countdown
-  if(gameState.supplyDrop && !gameState.supplyDrop.active){
-    gameState.supplyDrop.timer -= dt;
-    if(gameState.supplyDrop.timer <= 0){
-      // activate crate (plane flyover simulated)
-      gameState.supplyDrop.active = true;
-      gameState.supplyDrop.crate = {x: gameState.supplyDrop.x, y: -200, landed:false, rx: gameState.supplyDrop.x, ry: gameState.supplyDrop.y};
-      beep(1000,0.12,'sine',0.06);
-    }
-  } else if(gameState.supplyDrop && gameState.supplyDrop.active && gameState.supplyDrop.crate){
-    // move crate down as if dropping
-    const c = gameState.supplyDrop.crate;
-    c.y += 220*dt;
-    if(c.y >= c.ry){
-      c.y = c.ry;
-      c.landed = true;
-      // spawn a chest
-      gameState.chests.push({x:c.x, y:c.y, opened:false, supply:true});
-      gameState.supplyDrop = null;
-      beep(400,0.2,'sine',0.07);
-    }
-  }
-
-  // update players
-  for(const p of [...gameState.players, ...gameState.bots]){
-    if(!p.alive) continue;
-    // AI bots decide
-    if(p.isBot) botThink(p, dt);
-
-    // movement: if local player then use keys
-    if(p.isLocal){
-      // movement vector from WASD
-      let mx=0,my=0;
-      if(keys['w']) my -= 1;
-      if(keys['s']) my += 1;
-      if(keys['a']) mx -= 1;
-      if(keys['d']) mx += 1;
-      const mag = Math.hypot(mx,my) || 1;
-      mx /= mag; my /= mag;
-
-      // sprint
-      const sprint = keys['shift'];
-      let spd = sprint && p.stamina>4 ? p.runSpeed : p.speed;
-      if(sprint && p.stamina>0){
-        p.stamina -= 28*dt;
-      }else{
-        p.stamina = Math.min(100, p.stamina + p.staminaRegen*dt);
-      }
-
-      // dash
-      if(keys[' '] && p.dashCooldown <= 0){
-        p.dashCooldown = 1.1;
-        p.vx = mx*spd*3; p.vy = my*spd*3;
-        beep(900,0.04,'sine',0.06);
-      }else{
-        // apply normal movement
-        p.vx += (mx*spd - p.vx)*12*dt;
-        p.vy += (my*spd - p.vy)*12*dt;
-      }
-
-      // aim angle from mouse
-      const cam = cameraFor(p);
-      p.aimAngle = Math.atan2(mouse.y - cam.sy, mouse.x - cam.sx);
-
-      // firing
-      if(mouse.down) {
-        const w = p.inventory[p.activeSlot];
-        if(w && p.fireCooldown<=0){
-          fireWeapon(p,w);
-        }
-      }
-      // reload
-      if(keys['r'] && p.reloadTime<=0){
-        reloadWeapon(p);
-      }
-      // interact pickup
-      if(keys['e']){ tryPickup(p); keys['e']=false; }
-
-      // throw grenade
-      if(keys['g']){ throwGrenade(p); keys['g']=false; }
-
-      // weapon swap via keys 1/2
-      if(keys['1']){ p.activeSlot='slot1'; keys['1']=false; }
-      if(keys['2']){ p.activeSlot='slot2'; keys['2']=false; }
-    } else {
-      // bots movement applied by botThink
-      p.vx += (p._targetVx || 0 - p.vx)*6*dt;
-      p.vy += (p._targetVy || 0 - p.vy)*6*dt;
-    }
-
-    // apply motion
-    p.x += p.vx;
-    p.y += p.vy;
-    // world bounds
-    p.x = clamp(p.x, 30, WORLD.w - 30);
-    p.y = clamp(p.y, 30, WORLD.h - 30);
-
-    // cooldowns
-    if(p.fireCooldown>0) p.fireCooldown = Math.max(0, p.fireCooldown - dt);
-    if(p.reloadTime>0) p.reloadTime = Math.max(0, p.reloadTime - dt);
-    if(p.dashCooldown>0) p.dashCooldown = Math.max(0, p.dashCooldown - dt);
-
-    // storm damage
-    const d = Math.hypot(p.x - gameState.storm.center.x, p.y - gameState.storm.center.y);
-    if(d > gameState.storm.radius){
-      const dmg = 14 * dt;
-      applyDamage(p, dmg, null);
-    }
-
-    // clamp hp and shield
-    p.hp = clamp(p.hp, -100, 200);
-    p.shield = clamp(p.shield, 0, p.maxShield);
-
-    // regen shield slowly if not taken damage recently
-    if(Date.now() - p.lastDamage > 5000){
-      p.shield = Math.min(p.maxShield, p.shield + 6*dt);
-    }
-  }
-
-  // bullets update
-  for(const b of gameState.bullets){
-    b.x += b.dx; b.y += b.dy; b.travelled += Math.hypot(b.dx,b.dy);
-    b.life -= dt;
-    // collision with players/bots
-    for(const ent of [...gameState.bots, ...gameState.players]){
-      if(ent.alive && ent !== b.owner && Math.hypot(ent.x - b.x, ent.y - b.y) < ent.r + (b.isPellet?3:4)){
-        applyDamage(ent, b.damage, b.owner);
-        b.life = 0;
-        break;
-      }
-    }
-    // bullet out of range or life
-    if(b.travelled > b.maxRange || b.life <= 0 || b.x< -100 || b.x>WORLD.w+100 || b.y<-100 || b.y>WORLD.h+100){
-      b.dead = true;
-    }
-  }
-  gameState.bullets = gameState.bullets.filter(b=>!b.dead);
-
-  // grenades
-  for(const g of gameState.grenades){
-    g.x += g.vx*dt;
-    g.y += g.vy*dt;
-    g.vy += 18*dt; // gravity
-    g.life -= dt;
-    g.explodeIn -= dt*1000;
-    if(g.explodeIn <= 0 || g.life <= 0){
-      // explode
-      explodeAt(g.x,g.y,80,120,g.thrower);
-      g.dead = true;
-    }
-  }
-  gameState.grenades = gameState.grenades.filter(g=>!g.dead);
-
-  // chests do nothing except hold open state
-  // pickups are static (ttl not used)
-
-  // pickups occasionally respawn
-  if(Math.random() < 0.02) spawnPickup(rand(100,WORLD.w-100), rand(100,WORLD.h-100));
-
-  // update HUD
-  updateHUD();
-
-  // check win/lose
-  const local = gameState.players[0];
-  if(!local.alive){
-    // show game over overlay
-    showOverlay('You died — refresh to restart', true);
-    return;
-  }
-  // bots alive?
-  const aliveBots = gameState.bots.filter(b=>b.alive).length;
-  if(aliveBots === 0 && gameState.players.filter(p=>p.alive).length>0){
-    showOverlay('Victory! All bots down. You win!', true);
-    return;
-  }
-
-  requestAnimationFrame(update);
-  draw();
-}
-
-// Explosion damage
-function explodeAt(x,y,radius,damage,source){
-  beep(160,0.12,'sawtooth',0.08);
-  for(const ent of [...gameState.players, ...gameState.bots]){
-    if(!ent.alive) continue;
-    const d = Math.hypot(ent.x-x, ent.y-y);
-    if(d < radius){
-      const amt = damage * (1 - d/radius);
-      applyDamage(ent, amt, source);
-    }
-  }
-}
-
-// Bot AI primitive
-function botThink(bot, dt){
-  // if low hp, try to wander to medkits (naive) or run
-  if(bot.hp < 40){
-    // run away from center randomly
-    bot._targetVx = (Math.random()-0.5) * bot.runSpeed;
-    bot._targetVy = (Math.random()-0.5) * bot.runSpeed;
-  } else {
-    // find nearest enemy (player)
-    const target = gameState.players[0];
-    const dx = target.x - bot.x, dy = target.y - bot.y;
-    const d = Math.hypot(dx,dy);
-    // aim at player
-    bot.aimAngle = Math.atan2(dy,dx);
-    // if in range, fire sometimes
-    const w = bot.inventory[bot.activeSlot] || bot.inventory.slot1;
-    if(w && Math.random() < 0.9 && d < (w.range || 800)){
-      if(bot.fireCooldown<=0){
-        fireWeapon(bot, w);
-      }
-    }
-    // movement towards player
-    if(d > 220){
-      bot._targetVx = Math.cos(bot.aimAngle) * bot.speed;
-      bot._targetVy = Math.sin(bot.aimAngle) * bot.speed;
-    } else {
-      // strafe
-      bot._targetVx = Math.cos(bot.aimAngle + Math.PI/2) * bot.speed*0.8;
-      bot._targetVy = Math.sin(bot.aimAngle + Math.PI/2) * bot.speed*0.8;
-    }
-    // reload if empty
-    if(w && w.ammo <= 0 && bot.reloadTime <= 0){
-      reloadWeapon(bot);
-    }
-  }
-}
-
-// Reload
-function reloadWeapon(p){
-  const w = p.inventory[p.activeSlot];
-  if(!w || w.magSize === undefined) return;
-  p.reloadTime = 0.9 + (w.magSize/30)*0.6;
-  // after reloadTime, refill (we simulate instantly at end of reload)
-  setTimeout(()=>{
-    w.ammo = w.magSize;
-    beep(900,0.06,'triangle',0.05);
-  }, p.reloadTime*1000);
-}
-
-// Camera calculation for rendering
-function cameraFor(player){
-  // center canvas on player but clamp to world edges
-  const cam = {};
-  cam.x = clamp(player.x - W/2, 0, WORLD.w - W);
-  cam.y = clamp(player.y - H/2, 0, WORLD.h - H);
-  cam.sx = mouse.x + cam.x; // screen to world conversion used earlier
-  cam.sy = mouse.y + cam.y;
-  cam.cx = W/2; cam.cy = H/2;
-  cam.tx = cam.x; cam.ty = cam.y;
-  return cam;
-}
-
-// Drawing
-function draw(){
-  // clear
-  ctx.clearRect(0,0,W,H);
-
-  const player = gameState.players[0];
-  const cam = cameraFor(player);
-
-  // background grid
-  ctx.fillStyle = '#071018';
-  ctx.fillRect(0,0,W,H);
-  // simple parallax stars
-  for(let i=0;i<70;i++){
-    ctx.fillStyle = 'rgba(255,255,255,0.02)';
-    const gx = ((i*53) % WORLD.w) - cam.x;
-    const gy = ((i*97) % WORLD.h) - cam.y;
-    ctx.fillRect(gx,gy,2,2);
-  }
-
-  // draw storm circle
-  ctx.beginPath();
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = 'rgba(255,80,80,0.12)';
-  const scx = gameState.storm.center.x - cam.x;
-  const scy = gameState.storm.center.y - cam.y;
-  ctx.arc(scx, scy, gameState.storm.radius, 0,Math.PI*2);
-  ctx.stroke();
-
-  // draw chests
-  for(const c of gameState.chests){
-    const sx = c.x - cam.x, sy = c.y - cam.y;
-    ctx.fillStyle = c.opened ? 'rgba(120,120,120,0.6)' : '#ffd27f';
-    ctx.fillRect(sx-12, sy-8, 24, 16);
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.strokeRect(sx-12, sy-8, 24, 16);
-  }
-
-  // pickups
-  for(const p of gameState.pickups){
-    const sx = p.x - cam.x, sy = p.y - cam.y;
-    if(p.type==='med'){ ctx.fillStyle='#9ff7a6'; ctx.fillRect(sx-6,sy-6,12,12); }
-    else if(p.type==='shield'){ ctx.fillStyle='#7ee7ff'; ctx.fillRect(sx-6,sy-6,12,12); }
-    else if(p.type==='grenade'){ ctx.fillStyle='#ffd27f'; ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fill(); }
-    else { ctx.fillStyle='#bdbdbd'; ctx.fillRect(sx-5,sy-5,10,10); }
-  }
-
-  // supply crate if present
-  if(gameState.supplyDrop && gameState.supplyDrop.active && gameState.supplyDrop.crate){
-    const c = gameState.supplyDrop.crate;
-    ctx.fillStyle = '#c6ffb3';
-    const sx = c.x - cam.x, sy = c.y - cam.y;
-    ctx.fillRect(sx-18, sy-12, 36, 24);
-    ctx.fillStyle = '#6b6b6b';
-    ctx.fillRect(sx-16, sy-6, 32, 6);
-  }
-
-  // bullets
-  for(const b of gameState.bullets){
-    const sx = b.x - cam.x, sy = b.y - cam.y;
-    ctx.fillStyle = b.isPellet ? '#ffd' : '#f9f';
-    ctx.beginPath(); ctx.arc(sx,sy, b.isPellet?2.5:3, 0, Math.PI*2); ctx.fill();
-  }
-
-  // grenades arc
-  for(const g of gameState.grenades){
-    const sx = g.x - cam.x, sy = g.y - cam.y;
-    ctx.fillStyle = '#ff9a5b';
-    ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fill();
-  }
-
-  // bots
-  for(const b of gameState.bots){
-    if(!b.alive) continue;
-    const sx = b.x - cam.x, sy = b.y - cam.y;
-    ctx.fillStyle = '#ff6b6b';
-    ctx.beginPath(); ctx.arc(sx,sy, b.r,0,Math.PI*2); ctx.fill();
-    // small health bar
-    ctx.fillStyle = '#222';
-    ctx.fillRect(sx-16,sy - b.r - 12,32,5);
-    ctx.fillStyle = '#6ee7a3';
-    ctx.fillRect(sx-16, sy - b.r - 12, clamp((b.hp/100)*32,0,32),5);
-  }
-
-  // players (local later)
-  for(const p of gameState.players){
-    if(!p.alive) continue;
-    const sx = p.x - cam.x, sy = p.y - cam.y;
-    ctx.fillStyle = '#6be7ff';
-    ctx.beginPath(); ctx.arc(sx,sy, p.r,0,Math.PI*2); ctx.fill();
-    // draw orientation line
-    ctx.strokeStyle = '#022';
-    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx + Math.cos(p.aimAngle)*26, sy + Math.sin(p.aimAngle)*26); ctx.stroke();
-    // shield ring
-    if(p.shield>0){
-      ctx.strokeStyle = 'rgba(126,231,255,0.6)';
-      ctx.beginPath(); ctx.arc(sx,sy, p.r+6, 0, Math.PI*2); ctx.stroke();
-    }
-  }
-
-  // HUD crosshair for local player
-  const local = gameState.players[0];
-  const crossX = mouse.x, crossY = mouse.y;
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-  ctx.beginPath(); ctx.arc(crossX, crossY, 6,0,Math.PI*2); ctx.stroke();
-
-  // minimap draw (simple)
-  drawMinimap();
-
-  // top overlay text: storm distance
-  ctx.fillStyle = '#fff';
-  ctx.font = '14px Inter';
-  ctx.fillText('Storm radius: ' + Math.floor(gameState.storm.radius), 12, H - 12);
-}
-
-// Draw minimap
-function drawMinimap(){
-  const mm = minimapEl.getContext ? minimapEl.getContext('2d') : null;
-  if(!minimapEl.canvasContext){
-    // create canvas inside div
-    minimapEl.innerHTML = '';
-    const mcan = document.createElement('canvas');
-    mcan.width = 180; mcan.height = 180; minimapEl.appendChild(mcan);
-    minimapEl.canvasContext = mcan.getContext('2d');
-  }
-  const mmc = minimapEl.canvasContext;
-  const Wm = minimapEl.clientWidth, Hm = minimapEl.clientHeight;
-  mmc.clearRect(0,0,Wm,Hm);
-  // background
-  mmc.fillStyle = '#021018';
-  mmc.fillRect(0,0,Wm,Hm);
-  // scale world -> minimap
-  const sx = Wm / WORLD.w, sy = Hm / WORLD.h;
-  // storm circle
-  mmc.fillStyle = 'rgba(255,100,100,0.12)';
-  mmc.beginPath();
-  mmc.arc(gameState.storm.center.x*sx, gameState.storm.center.y*sy, gameState.storm.radius*sx, 0, Math.PI*2);
-  mmc.fill();
-  // players & bots
-  for(const b of gameState.bots){
-    if(!b.alive) continue;
-    mmc.fillStyle = '#ff6b6b';
-    mmc.fillRect(b.x*sx-2, b.y*sy-2,4,4);
-  }
-  for(const p of gameState.players){
-    if(!p.alive) continue;
-    mmc.fillStyle = '#6be7ff';
-    mmc.fillRect(p.x*sx-3, p.y*sy-3,6,6);
-  }
-  // chests
-  for(const c of gameState.chests){
-    mmc.fillStyle = c.opened ? 'rgba(120,120,120,0.4)' : '#ffd27f';
-    mmc.fillRect(c.x*sx-2, c.y*sy-2,4,4);
-  }
-}
-
-// utility: entities in range
-function getEntitiesAround(x,y,r){
-  const arr = [];
-  for(const e of [...gameState.players, ...gameState.bots]){
-    if(e.alive && Math.hypot(e.x-x,e.y-y) < r) arr.push(e);
-  }
-  return arr;
-}
-
-// update HUD DOM
-function updateHUD(){
-  const p = gameState.players[0];
-  hpDisp.innerText = Math.floor(p.hp);
-  shDisp.innerText = Math.floor(p.shield);
-  stDisp.innerText = Math.floor(p.stamina);
-  const active = p.inventory[p.activeSlot];
-  if(active){
-    if(active.magSize===Infinity) ammoDisp.innerText = '—';
-    else ammoDisp.innerText = (active.ammo ?? 0) + ' / ' + (active.magSize ?? '—');
-  } else ammoDisp.innerText = '—';
-  stormMeter.style.width = (Math.max(0, Math.min(100, (gameState.storm.radius / Math.max(WORLD.w,WORLD.h) * 100)))) + '%';
-  matchText.innerText = 'Players: 1 • Bots: ' + gameState.bots.filter(b=>b.alive).length;
-  invEl.innerText = `Slot1: ${ (p.inventory.slot1? p.inventory.slot1.name : 'Empty') } • Slot2: ${ (p.inventory.slot2? p.inventory.slot2.name : 'Empty') } • Grenades: ${p.inventory.grenades||0}`;
-}
-
-// Explosion, bullets, etc done above
-
-// Keyboard events for reload/pickup/swap implemented earlier
-window.addEventListener('keydown', (e)=>{
-  if(e.key==='r'){ keys['r']=true; setTimeout(()=>keys['r']=false,80); }
-  if(e.key==='e'){ keys['e']=true; setTimeout(()=>keys['e']=false,100); }
-  if(e.key==='g'){ keys['g']=true; setTimeout(()=>keys['g']=false,100); }
-  if(e.key==='1'){ keys['1']=true; setTimeout(()=>keys['1']=false,80); }
-  if(e.key==='2'){ keys['2']=true; setTimeout(()=>keys['2']=false,80); }
+document.body.addEventListener('click', () => {
+  document.body.requestPointerLock();
 });
 
-// show overlay message
-function showOverlay(text, persistent=false){
-  const ov = document.getElementById('overlay');
-  ov.style.pointerEvents = 'auto';
-  ov.innerHTML = '';
-  const box = document.createElement('div');
-  box.style.background='rgba(4,10,14,0.85)';
-  box.style.color='white';
-  box.style.padding='26px';
-  box.style.borderRadius='12px';
-  box.style.boxShadow='0 12px 40px rgba(0,0,0,0.6)';
-  box.style.textAlign='center';
-  box.innerHTML = `<div style="font-size:20px;font-weight:700;margin-bottom:10px">${text}</div>`;
-  const btn = document.createElement('div');
-  btn.className='btn';
-  btn.innerText = persistent ? 'Restart' : 'Close';
-  btn.onclick = ()=>{
-    ov.innerHTML=''; ov.style.pointerEvents='none';
-    if(persistent) initGame();
-  };
-  box.appendChild(btn);
-  ov.appendChild(box);
+document.addEventListener('mousemove', (e) => {
+  if (document.pointerLockElement === document.body) {
+    yaw -= e.movementX * 0.002;
+    pitch -= e.movementY * 0.002;
+    pitch = Math.max(-1, Math.min(1, pitch));
+  }
+});
+
+// ------------------------------------------------------
+// KEYBOARD MOVEMENT
+// ------------------------------------------------------
+document.addEventListener("keydown", (e) => keys[e.code] = true);
+document.addEventListener("keyup",   (e) => keys[e.code] = false);
+
+let velocityY = 0;
+
+// ------------------------------------------------------
+// GAME LOOP
+// ------------------------------------------------------
+function animate() {
+  requestAnimationFrame(animate);
+
+  // third person camera follows player
+  const camOffset = new THREE.Vector3(0, 5, -10);
+  let rotMatrix = new THREE.Matrix4().makeRotationY(yaw);
+  let camPos = camOffset.clone().applyMatrix4(rotMatrix);
+  camera.position.copy(player.position.clone().add(camPos));
+  camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 2, 0)));
+
+  // movement
+  const speed = 0.2;
+  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+  if (keys["KeyW"]) player.position.add(forward.clone().multiplyScalar(speed));
+  if (keys["KeyS"]) player.position.add(forward.clone().multiplyScalar(-speed));
+  if (keys["KeyA"]) player.position.add(right.clone().multiplyScalar(-speed));
+  if (keys["KeyD"]) player.position.add(right.clone().multiplyScalar(speed));
+
+  // gravity + jump
+  if (keys["Space"] && player.position.y <= 2.01) {
+    velocityY = 0.35;
+  }
+  velocityY -= 0.015;
+  player.position.y += velocityY;
+  if (player.position.y < 2) {
+    player.position.y = 2;
+    velocityY = 0;
+  }
+
+  // move bullets
+  bullets.forEach((b, i) => {
+    b.position.add(b.userData.velocity);
+
+    // check enemy hits
+    enemies.forEach(enemy => {
+      if (b.position.distanceTo(enemy.position) < 2) {
+        enemy.userData.hp -= 50;
+        scene.remove(b);
+        bullets.splice(i, 1);
+      }
+    });
+  });
+
+  // remove dead enemies
+  for (let i=enemies.length-1; i>=0; i--) {
+    if (enemies[i].userData.hp <= 0) {
+      scene.remove(enemies[i]);
+      enemies.splice(i, 1);
+    }
+  }
+
+  updateEnemies();
+
+  renderer.render(scene, camera);
 }
-
-// Initialize
-initGame();
-requestAnimationFrame(update);
-
-// For mobile/touch, bind touch to mouse
-canvas.addEventListener('touchstart', e=>{
-  const t = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = (t.clientX - rect.left) * (canvas.width/rect.width);
-  mouse.y = (t.clientY - rect.top) * (canvas.height/rect.height);
-  mouse.down = true;
-});
-canvas.addEventListener('touchmove', e=>{
-  const t = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = (t.clientX - rect.left) * (canvas.width/rect.width);
-  mouse.y = (t.clientY - rect.top) * (canvas.height/rect.height);
-});
-canvas.addEventListener('touchend', e=> mouse.down=false);
+animate();
 
 </script>
 </body>
