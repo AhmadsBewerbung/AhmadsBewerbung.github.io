@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Horror Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: #e5e7eb;
+    font-family: Inter, sans-serif;
+    overflow: hidden;
+  }
+
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 40%, black 75%);
+    pointer-events: none;
+    animation: flicker 6s infinite;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.45; }
+    70% { opacity: 0.3; }
+  }
+
+  #ui {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.9rem;
+    color: #9ca3af;
+    opacity: 0.85;
+  }
+
+  #message {
+    position: fixed;
+    top: 30px;
+    width: 100%;
+    text-align: center;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+  }
+
+  canvas {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="message">You feel like you're not alone.</div>
+<div id="ui">WASD to move · P to exit</div>
+<div id="overlay"></div>
+
+<script>
+/* ================= SETUP ================= */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* ================= PLAYER ================= */
+const player = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  speed: 2,
+  size: 8
+};
+
+const keys = {};
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+/* ================= AMBIENT TEXT ================= */
+const messages = [
+  "You hear something behind you.",
+  "The lights flicker.",
+  "Something moved.",
+  "You're being watched.",
+  "Don't turn around."
+];
+
+function randomMessage() {
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  document.getElementById("message").textContent = msg;
+}
+
+setInterval(randomMessage, 7000);
+
+/* ================= GAME LOOP ================= */
+function update() {
+  if (keys["w"]) player.y -= player.speed;
+  if (keys["s"]) player.y += player.speed;
+  if (keys["a"]) player.x -= player.speed;
+  if (keys["d"]) player.x += player.speed;
+}
+
+function draw() {
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // player (temporary placeholder)
+  ctx.fillStyle = "#b91c1c";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+
+/* ================= PANIC KEY ================= */
+document.addEventListener("keydown", e => {
+  if (e.key.toLowerCase() === "p") {
+    location.replace("https://stsei.de");
+  }
+});
+</script>
+
+</body>
+</html>
