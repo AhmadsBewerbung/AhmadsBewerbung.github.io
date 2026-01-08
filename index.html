@@ -1,997 +1,183 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FRONTRANGE — 3rd-person Stickman BR Prototype</title>
-<style>
-  html,body{height:100%;margin:0;background:#0b0f14;font-family:Inter, Arial, sans-serif;overflow:hidden}
-  #container{width:100%;height:100%}
-  #ui {
-    position: absolute; left: 12px; top: 12px; color:#dff6ff; z-index:20;
-    text-shadow:0 1px 0 rgba(0,0,0,0.6)
-  }
-  #hpbar {width:260px;height:18px;border-radius:10px;background:rgba(255,255,255,0.06);padding:3px;border:1px solid rgba(255,255,255,0.04)}
-  #hpfill {height:100%;background:linear-gradient(90deg,#7ee7ff,#6be7a3);width:100%;border-radius:8px}
-  #shieldfill{height:100%;background:linear-gradient(90deg,#9b7dff,#7ee7ff);width:0%;border-radius:8px;margin-top:6px;height:10px}
-  #hotbar {position:absolute;left:50%;transform:translateX(-50%);bottom:18px;display:flex;gap:8px;z-index:20}
-  .slot{width:84px;height:72px;background:rgba(255,255,255,0.03);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center; color:#fff;border:2px solid rgba(255,255,255,0.04);font-size:12px}
-  .slot.active{box-shadow:0 8px 24px rgba(0,0,0,0.6);border-color:rgba(126,231,255,0.9)}
-  .slot .label{font-size:11px;color:#bfeffb;margin-top:6px}
-  .hotkey{font-size:12px;color:#9aa6b2;position:absolute;left:6px;top:6px}
-  #minimap{position:absolute;right:12px;top:12px;width:180px;height:180px;background:rgba(0,0,0,0.35);border-radius:8px;padding:6px;z-index:20;border:1px solid rgba(255,255,255,0.04)}
-  #message{position:absolute;left:50%;top:10%;transform:translateX(-50%);color:#fff;font-size:20px;padding:10px 18px;background:rgba(0,0,0,0.45);border-radius:8px;display:none;z-index:30}
-  #hint{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);color:#9aa6b2;font-size:13px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unblocked Games</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --border: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    main {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .search {
+      margin-bottom: 2rem;
+    }
+
+    .search input {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      outline: none;
+    }
+
+    .search input:focus {
+      border-color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .game-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+    }
+
+    .game-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    .game-title {
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .game-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .play-btn {
+      display: inline-block;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: white;
+      background: var(--accent);
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 <body>
-<div id="container"></div>
 
-<div id="ui">
-  <div id="hpbar"><div id="hpfill"></div></div>
-  <div id="shieldfill"></div>
-  <div style="margin-top:8px;color:#9aa6b2;font-size:13px">HP: <span id="hpnum"></span> &nbsp; Shield: <span id="shnum"></span></div>
-</div>
+  <header>
+    <h1>Unblocked Games</h1>
+    <p>Simple. Clean. Fast.</p>
+  </header>
+
+  <main>
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Search games..." />
+    </div>
+
+    <div class="grid" id="gameGrid">
+
+      <div class="game-card" data-name="slope">
+        <div class="game-title">Slope</div>
+        <div class="game-desc">Fast-paced 3D rolling game.</div>
+        <a class="play-btn" href="games/slope.html">Play</a>
+      </div>
+
+      <div class="game-card" data-name="retro bowl">
+        <div class="game-title">Retro Bowl</div>
+        <div class="game-desc">Classic football management.</div>
+        <a class="play-btn" href="games/retrobowl.html">Play</a>
+      </div>
+
+      <div class="game-card" data-name="minecraft">
+        <div class="game-title">Minecraft Classic</div>
+        <div class="game-desc">Build and explore freely.</div>
+        <a class="play-btn" href="games/minecraft.html">Play</a>
+      </div>
+
+      <div class="game-card" data-name="cookie clicker">
+        <div class="game-title">Cookie Clicker</div>
+        <div class="game-desc">Idle clicking fun.</div>
+        <a class="play-btn" href="games/cookieclicker.html">Play</a>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    © 2026 · Unblocked Games Menu
+  </footer>
+
+  <script>
+    const searchInput = document.getElementById("searchInput");
+    const cards = document.querySelectorAll(".game-card");
+
+    searchInput.addEventListener("input", () => {
+      const value = searchInput.value.toLowerCase();
+
+      cards.forEach(card => {
+        const name = card.dataset.name;
+        card.style.display = name.includes(value) ? "block" : "none";
+      });
+    });
+  </script>
 
-<div id="hotbar"></div>
-<div id="minimap"></div>
-<div id="message"></div>
-<div id="hint">Click to lock pointer • WASD move • Mouse aim • LMB shoot • RMB ADS • 1-5 switch • Q GeoWeave • R reload • E pickup</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-// =====================
-// FRONTRANGE — 3rd-person stickman BR prototype
-// Single-file, original. No copyrighted assets.
-// =====================
-
-// ---------- Scene setup ----------
-const container = document.getElementById('container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1116);
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 5000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
-
-// lighting
-const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-dir.position.set(50,100,50);
-scene.add(dir);
-scene.add(new THREE.AmbientLight(0x7f8fa6, 0.6));
-
-// ground
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000,2000,64,64), new THREE.MeshStandardMaterial({color:0x39505a}));
-ground.rotation.x = -Math.PI/2;
-scene.add(ground);
-
-// simple grid lines to feel like a map
-const grid = new THREE.GridHelper(2000, 200, 0x2f3b40, 0x263035);
-grid.material.opacity = 0.12; grid.material.transparent = true;
-scene.add(grid);
-
-// storm visuals (circle)
-const stormMat = new THREE.MeshBasicMaterial({color:0xff6b6b, wireframe:true, opacity:0.12, transparent:true});
-const stormGeom = new THREE.CircleGeometry(1, 64);
-stormGeom.rotateX(-Math.PI/2);
-const stormMesh = new THREE.Mesh(stormGeom, stormMat);
-stormMesh.scale.set(1,1,1);
-scene.add(stormMesh);
-
-// ---------- Utilities ----------
-function rand(min,max){ return Math.random()*(max-min)+min; }
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-
-// camera control variables
-let yaw = 0, pitch = 0;
-let pointerLocked = false;
-document.body.addEventListener('click', ()=> {
-  if(!pointerLocked){
-    renderer.domElement.requestPointerLock();
-  }
-});
-document.addEventListener('pointerlockchange', ()=> {
-  pointerLocked = document.pointerLockElement === renderer.domElement;
-  document.getElementById('hint').style.display = pointerLocked ? 'none' : 'block';
-});
-document.addEventListener('mousemove', (e)=>{
-  if(pointerLocked){
-    yaw -= e.movementX * 0.002;
-    pitch -= e.movementY * 0.002;
-    pitch = clamp(pitch, -1.2, 0.6);
-  }
-});
-
-// keyboard
-const keys = {};
-window.addEventListener('keydown', e=> keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e=> keys[e.key.toLowerCase()] = false);
-
-// basic audio beep using WebAudio
-let audioCtx;
-function beep(freq=440,dur=0.08,vol=0.04,type='sine'){
-  try{
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.value = vol;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    setTimeout(()=>o.stop(), dur*1000);
-  }catch(e){}
-}
-
-// ---------- Player & Stickman model ----------
-const players = []; // player[0] is local player
-const bots = [];
-const bullets = [];
-const deployedWalls = [];
-const pickups = [];
-
-function makeStickman(scale=1, color=0x00aaff, widthFactor=1.0){
-  // returns THREE.Group representing a stylized stickman
-  const g = new THREE.Group();
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8*widthFactor*scale, 1.2*scale, 0.4*scale), new THREE.MeshStandardMaterial({color}));
-  torso.position.y = 1.0*scale;
-  g.add(torso);
-  // head
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35*scale, 8,8), new THREE.MeshStandardMaterial({color:0xf7e6d6}));
-  head.position.y = 2.0*scale;
-  g.add(head);
-  // limbs: cylinders
-  const limbMat = new THREE.MeshStandardMaterial({color});
-  const makeLimb = (len, rad)=>{
-    return new THREE.Mesh(new THREE.CylinderGeometry(rad*scale, rad*scale, len*scale, 8), limbMat);
-  };
-  const leftArm = makeLimb(1.0, 0.12);
-  leftArm.position.set(-0.6*scale*widthFactor, 1.25*scale, 0);
-  leftArm.rotation.z = Math.PI/6;
-  g.add(leftArm);
-  const rightArm = makeLimb(1.0, 0.12);
-  rightArm.position.set(0.6*scale*widthFactor, 1.25*scale, 0);
-  rightArm.rotation.z = -Math.PI/6;
-  g.add(rightArm);
-  const leftLeg = makeLimb(1.15, 0.14);
-  leftLeg.position.set(-0.25*scale*widthFactor, 0.15*scale, 0);
-  leftLeg.rotation.z = 0;
-  g.add(leftLeg);
-  const rightLeg = makeLimb(1.15, 0.14);
-  rightLeg.position.set(0.25*scale*widthFactor, 0.15*scale, 0);
-  g.add(rightLeg);
-
-  // attach points for gun/hand
-  g.userData = {head, torso, leftArm, rightArm};
-  return g;
-}
-
-// create player object
-function createPlayer(x,y,z,isLocal=false, color=0x00aaff){
-  const group = new THREE.Group();
-  const stick = makeStickman(1.0, color, 1.0);
-  group.add(stick);
-  group.position.set(x,y,z);
-  // simple bounding radius
-  const obj = {
-    group,
-    stick,
-    isLocal,
-    id: Math.random().toString(36).slice(2,8),
-    hp: 300,
-    shield: 50,
-    maxShield: 100,
-    speed: 6.8,
-    sprintSpeed: 10,
-    vx:0, vz:0,
-    onGround: true,
-    vy:0,
-    width: 0.8,
-    height: 2.2,
-    inventory: new Array(5).fill(null),
-    activeIndex: 0,
-    fireCooldown: 0,
-    reloadTime: 0,
-    grenades: 1,
-    isBot: !isLocal,
-    emoteTimer: 0
-  };
-  obj.group.userData = obj;
-  scene.add(group);
-  return obj;
-}
-
-// create local player and bots
-const local = createPlayer(0,0,0,true, 0x6be7ff);
-players.push(local);
-// populate hotbar later
-for(let i=0;i<5;i++) local.inventory[i] = null;
-
-// bots
-for(let b=0;b<9;b++){
-  const bx = rand(-150,150), bz = rand(-150,150);
-  const bot = createPlayer(bx,0,bz,false, 0xff7a7a);
-  // set different width so stickman variety
-  bot.stick.scale.x = rand(0.9,1.25);
-  bot.hp = 220 + Math.floor(rand(0,120));
-  bots.push(bot);
-}
-
-// ---------- Weapon models & data (original, not Fortnite) ----------
-const weaponPrototypes = {
-  "Pistol": {type:'hitscan', damage:26, fireRate:0.28, mag:12, reload:0.9, spread:3, range:1200, model:createGunModel('pistol')},
-  "AR": {type:'auto', damage:14, fireRate:0.09, mag:30, reload:1.9, spread:5, range:1500, model:createGunModel('ar')},
-  "Shotgun": {type:'shot', damage:9, pellets:8, fireRate:0.9, mag:6, reload:2.2, spread:18, range:360, model:createGunModel('shot')},
-  "Sniper": {type:'bolt', damage:120, fireRate:1.6, mag:5, reload:2.6, spread:0.6, range:4000, model:createGunModel('sn')},
-  "Rocket": {type:'proj', damage:160, fireRate:1.6, mag:1, reload:2.8, spread:0.8, range:2200, model:createGunModel('rx')}
-};
-
-function createGunModel(kind){
-  // simple composed geometry per kind
-  const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({color:0x2b2b2b, roughness:0.6});
-  const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.9), mat);
-  barrel.position.set(0,0,0.45);
-  g.add(barrel);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.16,0.4), mat);
-  body.position.set(0,-0.02,-0.05);
-  g.add(body);
-  if(kind==='ar'){
-    barrel.scale.set(1.2,1.05,1.6);
-    body.scale.set(1.1,1,1);
-    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.2,0.12), new THREE.MeshStandardMaterial({color:0x111111}));
-    mag.position.set(0,-0.15,-0.05);
-    g.add(mag);
-  } else if(kind==='shot'){
-    barrel.scale.set(1.0,1.0,0.6);
-    body.scale.set(1.0,1.0,0.9);
-  } else if(kind==='sn'){
-    barrel.scale.set(1.4,1.05,2.2);
-    body.scale.set(1.0,1.0,0.6);
-  } else if(kind==='rx'){
-    barrel.scale.set(1.2,1.2,1.3);
-    body.scale.set(1.1,1.1,0.9);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.12,8,8), new THREE.MeshStandardMaterial({color:0xffa07a}));
-    head.position.set(0,0.02,0.8);
-    g.add(head);
-  } else { // pistol
-    barrel.scale.set(1.0,0.9,0.5);
-    body.scale.set(0.9,0.9,0.6);
-  }
-  return g;
-}
-
-// helper attach gun to player
-function equipWeaponToPlayer(playerObj, weaponName, slotIndex){
-  const proto = weaponPrototypes[weaponName];
-  if(!proto) return;
-  // clone model
-  const model = proto.model.clone();
-  model.scale.set(6,6,6);
-  model.position.set(0.5, 1.15, 0.2); // near right arm
-  model.rotation.set(0, Math.PI, 0);
-  if(playerObj.gunModel) {
-    playerObj.group.remove(playerObj.gunModel);
-  }
-  playerObj.gunModel = model;
-  playerObj.group.add(model);
-  // store weapon instance
-  playerObj.inventory[slotIndex] = {
-    name: weaponName,
-    proto: proto,
-    ammo: proto.mag,
-    mag: proto.mag,
-    reloading: false,
-    rarity: ['common','adv','special','proto','exotic'][Math.floor(Math.random()*5)]
-  };
-}
-
-// give the local player some starting weapons
-equipWeaponToPlayer(local, 'Pistol', 0);
-equipWeaponToPlayer(local, 'AR', 1);
-local.inventory[2] = {name:'Knife', proto:{type:'melee', damage:24, fireRate:0.55}, ammo:Infinity, mag:Infinity};
-local.inventory[3] = {name:'Shotgun', proto:weaponPrototypes['Shotgun'], ammo:weaponPrototypes['Shotgun'].mag, mag:weaponPrototypes['Shotgun'].mag};
-local.inventory[4] = {name:'Sniper', proto:weaponPrototypes['Sniper'], ammo:weaponPrototypes['Sniper'].mag, mag:weaponPrototypes['Sniper'].mag};
-
-// equip bots randomly
-for(const b of bots){
-  const names = ['Pistol','AR','Shotgun','Sniper','Rocket'];
-  const pick = names[Math.floor(Math.random()*names.length)];
-  equipWeaponToPlayer(b, pick, 0);
-  b.inventory[1] = {name:'Knife', proto:{type:'melee', damage:20, fireRate:0.6}, ammo:Infinity};
-}
-
-// ---------- Hotbar UI ----------
-const hotbar = document.getElementById('hotbar');
-function refreshHotbar(){
-  hotbar.innerHTML = '';
-  for(let i=0;i<5;i++){
-    const s = document.createElement('div');
-    s.className = 'slot' + (local.activeIndex===i ? ' active' : '');
-    s.dataset.index = i;
-    s.onclick = ()=> { local.activeIndex = i; attachGunModelForActive(); refreshHotbar(); };
-    const hk = document.createElement('div'); hk.className='hotkey'; hk.innerText = (i+1);
-    s.appendChild(hk);
-    const name = document.createElement('div'); name.style.fontWeight='700'; name.innerText = (local.inventory[i]? local.inventory[i].name : 'Empty');
-    s.appendChild(name);
-    const ammo = document.createElement('div'); ammo.className='label';
-    const inv = local.inventory[i];
-    ammo.innerText = inv ? ((inv.mag===Infinity)?'—':(inv.ammo + ' / ' + inv.mag)) : '';
-    s.appendChild(ammo);
-    hotbar.appendChild(s);
-  }
-}
-refreshHotbar();
-
-// ---------- HUD updates ----------
-const hpfill = document.getElementById('hpfill');
-const hpnum = document.getElementById('hpnum');
-const shfill = document.getElementById('shieldfill');
-const shnum = document.getElementById('shnum');
-function updateHUD(){
-  const p = local;
-  const hpPct = clamp(p.hp/400, 0, 1); // because hp can be up to 400 visually
-  hpfill.style.width = (hpPct*100) + '%';
-  hpnum.innerText = Math.floor(p.hp);
-  shfill.style.width = (clamp(p.shield/p.maxShield,0,1)*100) + '%';
-  shnum.innerText = Math.floor(p.shield);
-  // hotbar ammo text
-  const slots = document.querySelectorAll('.slot');
-  slots.forEach((el, i)=>{
-    const inv = local.inventory[i];
-    const lbl = el.querySelector('.label');
-    if(inv) lbl.innerText = (inv.mag===Infinity ? '—' : (inv.ammo + ' / ' + inv.mag));
-    else lbl.innerText = '';
-    el.classList.toggle('active', local.activeIndex===i);
-  });
-}
-
-// ---------- Attach gun model for active slot ----------
-function attachGunModelForActive(){
-  const inv = local.inventory[local.activeIndex];
-  // remove existing gun model then add active gun
-  if(local.gunModel){
-    local.group.remove(local.gunModel);
-    local.gunModel = null;
-  }
-  if(inv && inv.proto && inv.proto.model){
-    const model = inv.proto.model.clone();
-    model.scale.set(6,6,6);
-    model.position.set(0.5, 1.15, 0.2);
-    if(inv.name==='Knife') model.scale.set(3,3,3);
-    local.gunModel = model;
-    local.group.add(model);
-  }
-}
-attachGunModelForActive();
-
-// ---------- Combat system ----------
-const worldBullets = []; // store bullets/projectiles
-function fireWeapon(shooter){
-  if(!shooter.alive) return;
-  const inv = shooter.inventory[shooter.activeIndex];
-  if(!inv || !inv.proto) return;
-  if(shooter.fireCooldown > 0 || shooter.reloadTime > 0) return;
-  const proto = inv.proto;
-  // handle ammo
-  if(inv.mag !== Infinity){
-    if(inv.ammo <= 0){
-      beep(220,0.08,'sine',0.04);
-      shooter.fireCooldown = 0.12;
-      return;
-    }
-    inv.ammo--;
-  }
-  // set cooldown
-  shooter.fireCooldown = proto.fireRate ?? 0.2;
-  // create behavior by proto.type
-  if(proto.type === 'melee'){
-    // short-range hit
-    // check entities in front (simple sphere arc)
-    const dir = getForwardVector(shooter);
-    const origin = shooter.group.position.clone().add(new THREE.Vector3(0,1.2,0));
-    for(const target of [...bots, local].filter(x=>x!==shooter)){
-      if(!target.alive) continue;
-      const toT = target.group.position.clone().sub(origin);
-      if(toT.length() < 3.0){
-        // apply damage
-        applyDamageToEntity(target, proto.damage, shooter);
-      }
-    }
-    beep(400,0.04,'square',0.04);
-  } else if(proto.type === 'hitscan' || proto.type === 'auto' || proto.type === 'bolt'){
-    // single ray
-    const dir = getForwardVector(shooter);
-    const origin = shooter.group.position.clone().add(new THREE.Vector3(0,1.2,0));
-    // apply spread
-    const spreadAngle = (proto.spread || 3) * (Math.PI/180);
-    const angleOffset = (Math.random()-0.5)*spreadAngle;
-    const axis = new THREE.Vector3(0,1,0);
-    dir.applyAxisAngle(axis, angleOffset);
-    // raycast by stepping
-    const step = dir.clone().multiplyScalar(2.5);
-    let pos = origin.clone();
-    let traveled = 0;
-    const maxRange = proto.range || 1500;
-    let hit = null;
-    while(traveled < maxRange){
-      pos = pos.clone().add(step);
-      traveled += step.length();
-      // check bots and player
-      for(const t of [...bots, local]){
-        if(!t.alive || t===shooter) continue;
-        const d = pos.distanceTo(t.group.position.clone().add(new THREE.Vector3(0,1,0)));
-        if(d < 1.3){
-          hit = {target:t, pos:pos.clone()};
-          break;
-        }
-      }
-      if(hit) break;
-    }
-    if(hit){
-      applyDamageToEntity(hit.target, proto.damage, shooter);
-    }
-    // visual bullet tracer
-    spawnTracer(origin, pos, 70);
-    beep(1100,0.04,'triangle',0.04);
-  } else if(proto.type === 'shot'){
-    const pellets = proto.pellets || 8;
-    for(let i=0;i<pellets;i++){
-      const dir = getForwardVector(shooter);
-      const spreadAngle = (proto.spread || 14) * (Math.PI/180);
-      const angleOffsetY = (Math.random()-0.5)*spreadAngle;
-      const angleOffsetX = (Math.random()-0.5)*spreadAngle;
-      dir.applyAxisAngle(new THREE.Vector3(0,1,0), angleOffsetY);
-      dir.applyAxisAngle(new THREE.Vector3(1,0,0), angleOffsetX);
-      // step check
-      const step = dir.clone().multiplyScalar(2.5);
-      let pos = shooter.group.position.clone().add(new THREE.Vector3(0,1.2,0));
-      let traveled = 0;
-      const maxRange = proto.range || 400;
-      let hit = null;
-      while(traveled < maxRange){
-        pos = pos.clone().add(step);
-        traveled += step.length();
-        for(const t of [...bots, local]){
-          if(!t.alive || t===shooter) continue;
-          const d = pos.distanceTo(t.group.position.clone().add(new THREE.Vector3(0,1,0)));
-          if(d < 1.6){
-            hit = {target:t, pos:pos.clone()};
-            break;
-          }
-        }
-        if(hit) break;
-      }
-      if(hit){
-        applyDamageToEntity(hit.target, proto.damage, shooter);
-      }
-      spawnTracer(shooter.group.position.clone().add(new THREE.Vector3(0,1.2,0)), pos, 30);
-    }
-    beep(700,0.05,'square',0.05);
-  } else if(proto.type === 'proj'){
-    // spawn projectile entity
-    const proj = {
-      pos: shooter.group.position.clone().add(new THREE.Vector3(0,1.2,0)),
-      vel: getForwardVector(shooter).multiplyScalar(40),
-      life: 6,
-      damage: proto.damage,
-      owner: shooter
-    };
-    worldBullets.push(proj);
-    beep(320,0.1,'sawtooth',0.05);
-  }
-  // small recoil: nudge camera pitch
-  pitch = clamp(pitch - 0.02, -1.2, 0.6);
-  // update HUD
-  updateHUD();
-}
-
-// spawn tracer (visual line) for brief time
-const tracers = [];
-function spawnTracer(a,b,ttl=50){
-  tracers.push({a,b,ttl});
-}
-
-// forward vector from player's yaw & pitch
-function getForwardVector(entity){
-  const v = new THREE.Vector3(0,0,-1);
-  const m = new THREE.Matrix4().makeRotationY(yaw);
-  return new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).normalize();
-}
-
-// apply damage (account shield)
-function applyDamageToEntity(target, amount, source){
-  if(!target.alive) return;
-  if(target.shield > 0){
-    const s = Math.min(target.shield, amount);
-    target.shield -= s;
-    amount -= s;
-  }
-  target.hp -= amount;
-  target.lastDamaged = Date.now();
-  if(target.hp <= 0){
-    target.alive = false;
-    scene.remove(target.group);
-    // drop chest / pickup
-    spawnPickup(target.group.position.x, target.group.position.z);
-    beep(100,0.14,'sine',0.06);
-  }
-}
-
-// projectile update
-function updateProjectiles(dt){
-  for(let i=worldBullets.length-1;i>=0;i--){
-    const p = worldBullets[i];
-    p.pos.add(p.vel.clone().multiplyScalar(dt));
-    p.life -= dt;
-    // collision with entities
-    for(const t of [...bots, local]){
-      if(!t.alive || t===p.owner) continue;
-      const d = new THREE.Vector3(p.pos.x,0,p.pos.z).distanceTo(new THREE.Vector3(t.group.position.x,0,t.group.position.z));
-      if(d < 2.2){
-        applyDamageToEntity(t, p.damage, p.owner);
-        // explosion effect: spawn pickups
-        spawnPickup(p.pos.x, p.pos.z);
-        worldBullets.splice(i,1);
-        i--;
-        break;
-      }
-    }
-    if(p.life<=0){ worldBullets.splice(i,1); }
-  }
-}
-
-// bullet / tracer render
-function renderTracers(){
-  // simple short-lived lines
-  for(let i=tracers.length-1;i>=0;i--){
-    const t = tracers[i];
-    t.ttl--;
-    const mat = new THREE.LineBasicMaterial({color:0xfff59d, transparent:true, opacity: Math.max(0, t.ttl/80) });
-    const geo = new THREE.BufferGeometry().setFromPoints([t.a, t.b]);
-    const line = new THREE.Line(geo, mat);
-    scene.add(line);
-    setTimeout(()=>scene.remove(line), 40);
-    if(t.ttl <= 0) tracers.splice(i,1);
-  }
-}
-
-// spawn pickups (medkit/shield/ammo)
-function spawnPickup(x,z){
-  const types = ['med','shield','ammo'];
-  const type = types[Math.floor(Math.random()*types.length)];
-  const el = {x,z,type,ttl:60};
-  pickups.push(el);
-  // also show a simple marker
-  const marker = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.6,0.6), new THREE.MeshStandardMaterial({color: type==='med'?0x9ff7a6: (type==='shield'?0x7ee7ff:0xffd27f)}));
-  marker.position.set(x,0.3,z);
-  el.mesh = marker;
-  scene.add(marker);
-}
-
-// pickup handling
-function tryPickup(player){
-  for(let i=pickups.length-1;i>=0;i--){
-    const pk = pickups[i];
-    const d = Math.hypot(pk.x - player.group.position.x, pk.z - player.group.position.z);
-    if(d < 3.0){
-      if(pk.type==='med'){ player.hp = Math.min(400, player.hp + 60); }
-      else if(pk.type==='shield'){ player.shield = Math.min(player.maxShield, player.shield + 60); }
-      else if(pk.type==='ammo'){ // refill current weapon
-        const inv = player.inventory[player.activeIndex];
-        if(inv && inv.mag !== Infinity){ inv.ammo = Math.min(inv.mag, inv.ammo + Math.floor(inv.mag * 0.6)); }
-      }
-      scene.remove(pk.mesh);
-      pickups.splice(i,1);
-      beep(1200,0.04,'sine',0.05);
-    }
-  }
-}
-
-// ---------- GeoWeaver: deploy temporary walls ----------
-function deployWall(player){
-  // create a box 2m in front of player
-  const dir = getForwardVector(player);
-  const pos = player.group.position.clone().add(dir.clone().multiplyScalar(3.2));
-  const wallGeo = new THREE.BoxGeometry(3.2,2.4,0.2);
-  const wallMat = new THREE.MeshStandardMaterial({color:0x8fb4ff, transparent:true, opacity:0.95});
-  const wall = new THREE.Mesh(wallGeo, wallMat);
-  wall.position.set(pos.x,1.2,pos.z);
-  // rotate so its normal faces player direction
-  wall.lookAt(player.group.position.x, wall.position.y, player.group.position.z);
-  scene.add(wall);
-  const wObj = {mesh:wall, ttl:10.0};
-  deployedWalls.push(wObj);
-  beep(700,0.06,'sine',0.06);
-}
-
-// ---------- Bot AI (primitive) ----------
-function botUpdate(bot, dt){
-  if(!bot.alive) return;
-  // simple behavior: find nearest enemy (local player)
-  const target = local;
-  const dx = target.group.position.x - bot.group.position.x;
-  const dz = target.group.position.z - bot.group.position.z;
-  const dist = Math.hypot(dx,dz);
-  // aim at player
-  // move towards or strafe
-  if(dist > 10){
-    bot.vx = (dx/dist) * bot.speed * 0.8;
-    bot.vz = (dz/dist) * bot.speed * 0.8;
-  } else {
-    // strafe
-    bot.vx = Math.cos(Date.now()*0.001 + bot.group.position.x) * bot.speed * 0.5;
-    bot.vz = Math.sin(Date.now()*0.001 + bot.group.position.z) * bot.speed * 0.5;
-  }
-  // face target visually
-  const ang = Math.atan2(dx, dz);
-  // occasional fire
-  if(bot.fireCooldown <= 0 && dist < 120){
-    bot.activeIndex = 0;
-    fireWeapon(bot);
-  }
-  // move & gravity
-  bot.group.position.x += bot.vx*dt;
-  bot.group.position.z += bot.vz*dt;
-  // simple ocassional pickup
-  if(Math.random() < 0.001) tryPickup(bot);
-}
-
-// ---------- Controls: mouse, fire, ADS ----------
-let mouseDown = false;
-renderer.domElement.addEventListener('mousedown', (e)=> {
-  mouseDown = true;
-  if(e.button === 0) fireWeapon(local);
-});
-renderer.domElement.addEventListener('mouseup', ()=> mouseDown=false);
-window.addEventListener('contextmenu', e=> e.preventDefault()); // disable rmb menu
-let isADS = false;
-window.addEventListener('mousedown', (e)=>{ if(e.button===2) isADS=true; });
-window.addEventListener('mouseup', (e)=>{ if(e.button===2) isADS=false; });
-
-// key binds for reload, weapon switch, deploy
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'r') reloadWeapon(local);
-  if(e.key === 'q') deployWall(local);
-  if(e.key === 'e') tryPickup(local);
-  if(e.key === 't') { local.emoteTimer = 2.2; beep(1200,0.06,'sine',0.06); }
-  const idx = parseInt(e.key);
-  if(idx >=1 && idx <=5){ local.activeIndex = idx - 1; attachGunModelForActive(); refreshHotbarUI(); }
-});
-
-// reload
-function reloadWeapon(player){
-  const inv = player.inventory[player.activeIndex];
-  if(!inv || inv.mag===Infinity) return;
-  player.reloadTime = inv.proto.reload || 1.0;
-  // complete reload after time
-  setTimeout(()=>{
-    inv.ammo = inv.mag;
-    player.reloadTime = 0;
-    beep(900,0.06,'triangle',0.06);
-    updateHUD();
-  }, player.reloadTime*1000);
-}
-
-// attach gun model for generic players (bots/local) when switching
-function attachGunModelForActive(pObj = local){
-  // remove previous gun model if present
-  if(pObj.gunModel){
-    pObj.group.remove(pObj.gunModel);
-    pObj.gunModel = null;
-  }
-  const inv = pObj.inventory[pObj.activeIndex];
-  if(!inv || !inv.proto) return;
-  // clone proto model if exists, else create small indicator
-  if(inv.proto.model){
-    const mod = inv.proto.model.clone();
-    mod.scale.set(6,6,6);
-    mod.position.set(0.5, 1.15, 0.2);
-    pObj.gunModel = mod;
-    pObj.group.add(mod);
-  } else {
-    // knife: small blade
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.05,0.12), new THREE.MeshStandardMaterial({color:0x212121}));
-    blade.position.set(0.6, 1.15, 0.25);
-    blade.rotation.set(-0.2,0.2,0.6);
-    pObj.gunModel = blade;
-    pObj.group.add(blade);
-  }
-}
-attachGunModelForActive();
-
-// refresh hotbar visuals
-function refreshHotbarUI(){
-  const hotbar = document.getElementById('hotbar');
-  hotbar.innerHTML = '';
-  for(let i=0;i<5;i++){
-    const slot = document.createElement('div');
-    slot.className = 'slot' + (local.activeIndex===i? ' active':'');
-    slot.onclick = ()=> { local.activeIndex = i; attachGunModelForActive(); refreshHotbarUI(); };
-    const key = document.createElement('div'); key.className='hotkey'; key.innerText = i+1;
-    slot.appendChild(key);
-    const inv = local.inventory[i];
-    const title = document.createElement('div');
-    title.innerText = inv ? inv.name : 'Empty';
-    title.style.fontWeight = '700';
-    slot.appendChild(title);
-    const ammo = document.createElement('div');
-    ammo.className = 'label';
-    ammo.style.marginTop = '6px';
-    ammo.innerText = inv ? (inv.mag===Infinity? '—' : (inv.ammo + ' / ' + inv.mag)) : '';
-    slot.appendChild(ammo);
-    hotbar.appendChild(slot);
-  }
-}
-refreshHotbarUI();
-
-// ---------- Storm (shrinking safe zone) ----------
-const storm = {
-  center: new THREE.Vector3(0,0,0),
-  radius: 600,
-  shrinkRate: 0.5,
-  minRadius: 80,
-  timerToShrink: 12 // seconds before it starts
-};
-let matchTime = 0;
-
-// ---------- Main loop ----------
-let last = performance.now();
-function loop(now){
-  const dt = (now - last) / 1000; last = now;
-  matchTime += dt;
-
-  // start shrinking after timer
-  if(matchTime > storm.timerToShrink){
-    storm.radius = Math.max(storm.minRadius, storm.radius - storm.shrinkRate);
-  }
-  // storm mesh update
-  stormMesh.scale.set(storm.radius, storm.radius, storm.radius);
-  stormMesh.position.set(storm.center.x, 0.01, storm.center.z);
-
-  // input & local player movement
-  const p = local;
-  // movement vector relative to yaw
-  let forward = 0, right = 0;
-  if(keys['w']) forward += 1;
-  if(keys['s']) forward -= 1;
-  if(keys['a']) right -= 1;
-  if(keys['d']) right += 1;
-  // normalize
-  const mag = Math.hypot(forward, right) || 1;
-  forward/=mag; right/=mag;
-  // derive world movement from camera yaw
-  const dirF = new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
-  const dirR = new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
-  const move = dirF.multiplyScalar(forward * p.speed * dt).add(dirR.multiplyScalar(right * p.speed * dt));
-  p.group.position.add(move);
-
-  // gravity & jump
-  if(keys[' ']){
-    if(p.onGround){ p.vy = 8; p.onGround = false; }
-  }
-  p.vy -= 18 * dt; // gravity
-  p.group.position.y += p.vy * dt;
-  if(p.group.position.y <= 0){
-    p.group.position.y = 0;
-    p.vy = 0;
-    p.onGround = true;
-  }
-
-  // update camera behind player with yaw/pitch
-  const camOffset = new THREE.Vector3(0, 3.6, 7.6);
-  const rotation = new THREE.Matrix4().makeRotationY(yaw);
-  const offset = camOffset.applyMatrix4(rotation);
-  camera.position.copy(p.group.position.clone().add(new THREE.Vector3(0,2.0,0)).add(offset));
-  const lookAt = p.group.position.clone().add(new THREE.Vector3(0,1.6,0));
-  camera.lookAt(lookAt);
-
-  // fire on hold for auto weapons if mouse held
-  if(mouseDown){
-    const inv = p.inventory[p.activeIndex];
-    if(inv && inv.proto && inv.proto.type === 'auto'){
-      if(p.fireCooldown<=0) fireWeapon(p);
-    }
-  }
-
-  // cooldowns
-  if(p.fireCooldown>0) p.fireCooldown = Math.max(0, p.fireCooldown - dt);
-  if(p.reloadTime>0) p.reloadTime = Math.max(0, p.reloadTime - dt);
-  if(p.emoteTimer>0){
-    p.emoteTimer = Math.max(0, p.emoteTimer - dt);
-    // simple procedural arm wave while emote
-    const t = (2 - p.emoteTimer) * 10;
-    p.stick.userData.leftArm.rotation.z = Math.sin(t)*0.8;
-    p.stick.userData.rightArm.rotation.z = -Math.sin(t)*0.8;
-  } else {
-    // rest arms normal
-    p.stick.userData.leftArm.rotation.z = Math.PI/6;
-    p.stick.userData.rightArm.rotation.z = -Math.PI/6;
-  }
-
-  // update bots
-  for(const b of bots) {
-    if(!b.alive) continue;
-    botUpdate(b, dt);
-  }
-
-  // update pickups, drop TTL
-  for(let i=pickups.length-1;i>=0;i--){
-    const pk = pickups[i];
-    pk.ttl -= dt;
-    if(pk.ttl <= 0){
-      scene.remove(pk.mesh);
-      pickups.splice(i,1);
-    } else {
-      // bob animation
-      if(pk.mesh) pk.mesh.position.y = 0.3 + Math.sin(matchTime*3 + i)*0.12;
-    }
-  }
-
-  // projectiles
-  updateProjectiles(dt);
-
-  // world bullets render: ensure we have meshes for projectile list
-  // (we render projectiles as small spheres)
-  // clean old markers
-  // we will create transient meshes for each projectile for visual feedback
-  for(const pproj of worldBullets){
-    // create a small mesh if not present
-    if(!pproj.mesh){
-      const m = new THREE.Mesh(new THREE.SphereGeometry(0.18,6,6), new THREE.MeshStandardMaterial({color:0xffb07a, emissive:0xff7a7a}));
-      m.position.copy(pproj.pos);
-      pproj.mesh = m;
-      scene.add(m);
-    } else {
-      pproj.mesh.position.copy(pproj.pos);
-    }
-  }
-  // remove meshes for removed projectiles
-  // (handled when projectile popped from worldBullets)
-
-  // deployed walls TTL
-  for(let i=deployedWalls.length-1;i>=0;i--){
-    const w = deployedWalls[i];
-    w.ttl -= dt;
-    if(w.ttl <= 0){
-      scene.remove(w.mesh);
-      deployedWalls.splice(i,1);
-    } else {
-      // slight pulse to indicate weakening
-      w.mesh.material.opacity = 0.6 * (w.ttl/10) + 0.3;
-    }
-  }
-
-  // bots & players stickman bob/limb swing
-  for(const ent of [local, ...bots]){
-    if(!ent.alive) continue;
-    // simple gait: rotate legs based on position
-    const speed = Math.hypot(ent.vx || 0, ent.vz || 0) || 0.001;
-    const t = performance.now()*0.004;
-    if(ent.stick && ent.stick.userData){
-      ent.stick.userData.leftArm.rotation.x = Math.sin(t*speed*2)*0.25;
-      ent.stick.userData.rightArm.rotation.x = -Math.sin(t*speed*2)*0.25;
-      ent.stick.userData.leftArm.rotation.z = Math.PI/6 + Math.cos(t*speed*2)*0.12;
-      ent.stick.userData.rightArm.rotation.z = -Math.PI/6 - Math.cos(t*speed*2)*0.12;
-    }
-  }
-
-  // update HUD and hotspots
-  updateHUD();
-
-  // check storm damage for local player
-  const d = Math.hypot(local.group.position.x - storm.center.x, local.group.position.z - storm.center.z);
-  if(d > storm.radius){
-    applyDamageToEntity(local, 18 * dt, null);
-    // warning beep occasionally
-    if(Math.random() < 0.02) beep(240,0.02,'sine',0.02);
-  }
-
-  // update and render scene
-  renderer.render(scene, camera);
-
-  last = now;
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-
-// ---------- helper: applyDamageToEntity defined earlier (we re-use) ----------
-// (already defined above; ensure local/global scoping works)
-
-// ---------- spawn some pickups to start ----------
-for(let i=0;i<20;i++) spawnPickup(rand(-160,160), rand(-160,160));
-
-// ---------- attach gun models visually after init ----------
-function attachAllGuns(){
-  // attach for local and bots
-  for(const ent of [local, ...bots]){
-    // remove existing if any
-    if(ent.gunModel) ent.group.remove(ent.gunModel);
-    const inv = ent.inventory[ent.activeIndex];
-    if(inv && inv.proto && inv.proto.model){
-      const m = inv.proto.model.clone();
-      m.scale.set(6,6,6);
-      m.position.set(0.5,1.15,0.2);
-      ent.gunModel = m;
-      ent.group.add(m);
-    }
-  }
-}
-attachAllGuns();
-
-// ---------- helper: updateHUD (full) ----------
-function updateHUD(){
-  const p = local;
-  const hpPct = clamp(p.hp / 400, 0, 1);
-  hpfill.style.width = (hpPct * 100) + '%';
-  hpnum.innerText = Math.floor(p.hp);
-  shfill.style.width = (clamp(p.shield / p.maxShield,0,1) * 100) + '%';
-  shnum.innerText = Math.floor(p.shield);
-  refreshHotbarUI();
-}
-
-// ---------- refresh hotbar visuals (reusable) ----------
-function refreshHotbarUI(){
-  // reuse earlier refreshHotbarUI to reflect ammo changes
-  const hotbar = document.getElementById('hotbar');
-  if(!hotbar) return;
-  hotbar.innerHTML = '';
-  for(let i=0;i<5;i++){
-    const slot = document.createElement('div');
-    slot.className = 'slot' + (local.activeIndex===i ? ' active' : '');
-    slot.onclick = ()=>{ local.activeIndex = i; attachGunModelForActive(); refreshHotbarUI(); };
-    const key = document.createElement('div'); key.className='hotkey'; key.innerText = (i+1);
-    slot.appendChild(key);
-    const inv = local.inventory[i];
-    const title = document.createElement('div');
-    title.innerText = inv ? inv.name : 'Empty';
-    title.style.fontWeight = '700';
-    slot.appendChild(title);
-    const ammo = document.createElement('div'); ammo.className='label';
-    ammo.style.marginTop = '6px';
-    ammo.innerText = inv ? (inv.mag===Infinity ? '—' : (inv.ammo + ' / ' + inv.mag)) : '';
-    slot.appendChild(ammo);
-    hotbar.appendChild(slot);
-  }
-}
-
-// ---------- window resize ----------
-window.addEventListener('resize', ()=> {
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// ---------- initial HUD update ----------
-updateHUD();
-
-// ---------- safety: ensure no reference error for applyDamageToEntity if not declared earlier ----------
-if(typeof applyDamageToEntity !== 'function'){
-  function applyDamageToEntity(target, amount, source){
-    if(!target.alive) return;
-    if(target.shield > 0){
-      const s = Math.min(target.shield, amount);
-      target.shield -= s;
-      amount -= s;
-    }
-    target.hp -= amount;
-    if(target.hp <= 0){
-      target.alive = false;
-      scene.remove(target.group);
-    }
-  }
-}
-
-// ---------- final message display utility ----------
-function showMessage(text, duration=2200){
-  const el = document.getElementById('message');
-  el.innerText = text;
-  el.style.display = 'block';
-  setTimeout(()=> el.style.display = 'none', duration);
-}
-
-// ---------- done ----------
-showMessage('Stickman BR loaded — enjoy!');
-
-</script>
 </body>
 </html>
