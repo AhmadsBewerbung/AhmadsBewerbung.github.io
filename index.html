@@ -10,12 +10,12 @@
 
   <style>
     :root {
-      --bg: #000000;
-      --card: #0b0b0f;
+      --bg: #0b1220;        /* deep navy */
+      --card: #111a2e;      /* navy card */
       --text: #e5e7eb;
       --muted: #9ca3af;
-      --accent: #3b82f6;
-      --border: #1a1a1f;
+      --accent: #b91c1c;    /* muted red */
+      --border: #1f2a44;
     }
 
     * {
@@ -78,16 +78,50 @@
       border-color: var(--accent);
     }
 
-    .empty-state {
-      text-align: center;
-      margin-top: 6rem;
-      color: var(--muted);
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
     }
 
-    .empty-state h2 {
-      color: var(--text);
-      font-size: 1.4rem;
-      margin-bottom: 0.5rem;
+    .game-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    }
+
+    .game-title {
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .game-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .play-btn {
+      display: inline-block;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .play-btn:hover {
+      opacity: 0.9;
     }
 
     footer {
@@ -107,21 +141,44 @@
 
   <main>
     <div class="search">
-      <input type="text" placeholder="Search games..." disabled />
+      <input type="text" id="searchInput" placeholder="Search games..." />
     </div>
 
-    <div class="empty-state">
-      <h2>No games yet</h2>
-      <p>Add your games to get started.</p>
-    </div>
+    <div class="grid" id="gameGrid"></div>
   </main>
 
   <footer>
     © 2026 · Ahmad's Garten
   </footer>
 
-  <!-- Panic Key -->
   <script>
+    const games = [];
+
+    const grid = document.getElementById("gameGrid");
+    const searchInput = document.getElementById("searchInput");
+
+    function renderGames(list) {
+      grid.innerHTML = "";
+      list.forEach(game => {
+        const card = document.createElement("div");
+        card.className = "game-card";
+        card.innerHTML = `
+          <div class="game-title">${game.name}</div>
+          <div class="game-desc">${game.desc}</div>
+          <a class="play-btn" href="${game.url}">Play</a>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    renderGames(games);
+
+    searchInput.addEventListener("input", () => {
+      const value = searchInput.value.toLowerCase();
+      renderGames(games.filter(g => g.name.toLowerCase().includes(value)));
+    });
+
+    /* Panic Key */
     document.addEventListener("keydown", (e) => {
       const tag = document.activeElement.tagName.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
