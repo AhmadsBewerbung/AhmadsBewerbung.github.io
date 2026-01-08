@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unblocked Games</title>
+  <title>Ahmad's Garten</title>
 
-  <!-- Google Font -->
+  <!-- Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg: #f4f6f8;
-      --card: #ffffff;
-      --text: #1f2933;
-      --muted: #6b7280;
-      --accent: #2563eb;
-      --border: #e5e7eb;
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+      --border: #1f2937;
     }
 
     * {
@@ -34,17 +34,19 @@
     header {
       background: var(--card);
       border-bottom: 1px solid var(--border);
-      padding: 1.5rem 2rem;
+      padding: 1.75rem 2rem;
     }
 
     header h1 {
-      font-size: 1.6rem;
+      font-size: 1.7rem;
       font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     header p {
       color: var(--muted);
-      margin-top: 0.25rem;
+      margin-top: 0.3rem;
+      font-size: 0.95rem;
     }
 
     main {
@@ -61,55 +63,31 @@
       width: 100%;
       padding: 0.9rem 1rem;
       font-size: 1rem;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
       outline: none;
+    }
+
+    .search input::placeholder {
+      color: var(--muted);
     }
 
     .search input:focus {
       border-color: var(--accent);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .game-card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 1.25rem;
-      border: 1px solid var(--border);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      cursor: pointer;
-    }
-
-    .game-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    }
-
-    .game-title {
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-    }
-
-    .game-desc {
-      font-size: 0.9rem;
+    .empty-state {
+      text-align: center;
+      margin-top: 6rem;
       color: var(--muted);
-      margin-bottom: 1rem;
     }
 
-    .play-btn {
-      display: inline-block;
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: white;
-      background: var(--accent);
-      padding: 0.5rem 0.9rem;
-      border-radius: 8px;
+    .empty-state h2 {
+      color: var(--text);
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
     }
 
     footer {
@@ -123,59 +101,34 @@
 <body>
 
   <header>
-    <h1>Unblocked Games</h1>
-    <p>Simple. Clean. Fast.</p>
+    <h1>Ahmad's Garten</h1>
+    <p>A clean place for games</p>
   </header>
 
   <main>
     <div class="search">
-      <input type="text" id="searchInput" placeholder="Search games..." />
+      <input type="text" placeholder="Search games..." disabled />
     </div>
 
-    <div class="grid" id="gameGrid">
-
-      <div class="game-card" data-name="slope">
-        <div class="game-title">Slope</div>
-        <div class="game-desc">Fast-paced 3D rolling game.</div>
-        <a class="play-btn" href="games/slope.html">Play</a>
-      </div>
-
-      <div class="game-card" data-name="retro bowl">
-        <div class="game-title">Retro Bowl</div>
-        <div class="game-desc">Classic football management.</div>
-        <a class="play-btn" href="games/retrobowl.html">Play</a>
-      </div>
-
-      <div class="game-card" data-name="minecraft">
-        <div class="game-title">Minecraft Classic</div>
-        <div class="game-desc">Build and explore freely.</div>
-        <a class="play-btn" href="games/minecraft.html">Play</a>
-      </div>
-
-      <div class="game-card" data-name="cookie clicker">
-        <div class="game-title">Cookie Clicker</div>
-        <div class="game-desc">Idle clicking fun.</div>
-        <a class="play-btn" href="games/cookieclicker.html">Play</a>
-      </div>
-
+    <div class="empty-state">
+      <h2>No games yet</h2>
+      <p>Add your games to get started.</p>
     </div>
   </main>
 
   <footer>
-    © 2026 · Unblocked Games Menu
+    © 2026 · Ahmad's Garten
   </footer>
 
+  <!-- Panic Key Script -->
   <script>
-    const searchInput = document.getElementById("searchInput");
-    const cards = document.querySelectorAll(".game-card");
+    document.addEventListener("keydown", (e) => {
+      const tag = document.activeElement.tagName.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
 
-    searchInput.addEventListener("input", () => {
-      const value = searchInput.value.toLowerCase();
-
-      cards.forEach(card => {
-        const name = card.dataset.name;
-        card.style.display = name.includes(value) ? "block" : "none";
-      });
+      if (e.key.toLowerCase() === "p") {
+        window.location.replace("https://stsei.de");
+      }
     });
   </script>
 
