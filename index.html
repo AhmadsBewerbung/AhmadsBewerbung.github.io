@@ -1,140 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Horror Game</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ahmad's Garten</title>
 
-<style>
-  body {
-    margin: 0;
-    background: black;
-    color: #e5e7eb;
-    font-family: Inter, sans-serif;
-    overflow: hidden;
-  }
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  #overlay {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at center, transparent 40%, black 75%);
-    pointer-events: none;
-    animation: flicker 6s infinite;
-  }
+  <style>
+    :root {
+      --bg: #0b1220;        /* deep navy */
+      --card: #111a2e;      /* navy card */
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #b91c1c;    /* muted red */
+      --border: #1f2a44;
+    }
 
-  @keyframes flicker {
-    0%, 100% { opacity: 0.35; }
-    50% { opacity: 0.45; }
-    70% { opacity: 0.3; }
-  }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
 
-  #ui {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.9rem;
-    color: #9ca3af;
-    opacity: 0.85;
-  }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-  #message {
-    position: fixed;
-    top: 30px;
-    width: 100%;
-    text-align: center;
-    font-size: 1rem;
-    letter-spacing: 0.05em;
-    opacity: 0.8;
-  }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1.75rem 2rem;
+    }
 
-  canvas {
-    display: block;
-  }
-</style>
+    header h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 0.3rem;
+      font-size: 0.95rem;
+    }
+
+    main {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .search {
+      margin-bottom: 2rem;
+    }
+
+    .search input {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+    }
+
+    .search input::placeholder {
+      color: var(--muted);
+    }
+
+    .search input:focus {
+      border-color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .game-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    }
+
+    .game-title {
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .game-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .play-btn {
+      display: inline-block;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .play-btn:hover {
+      opacity: 0.9;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 <body>
 
-<canvas id="game"></canvas>
+  <header>
+    <h1>Ahmad's Garten</h1>
+    <p>A clean place for games</p>
+  </header>
 
-<div id="message">You feel like you're not alone.</div>
-<div id="ui">WASD to move · P to exit</div>
-<div id="overlay"></div>
+  <main>
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Search games..." />
+    </div>
 
-<script>
-/* ================= SETUP ================= */
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+    <div class="grid" id="gameGrid"></div>
+  </main>
 
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+  <footer>
+    © 2026 · Ahmad's Garten
+  </footer>
 
-/* ================= PLAYER ================= */
-const player = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-  speed: 2,
-  size: 8
-};
+  <script>
+    const games = [];
 
-const keys = {};
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+    const grid = document.getElementById("gameGrid");
+    const searchInput = document.getElementById("searchInput");
 
-/* ================= AMBIENT TEXT ================= */
-const messages = [
-  "You hear something behind you.",
-  "The lights flicker.",
-  "Something moved.",
-  "You're being watched.",
-  "Don't turn around."
-];
+    function renderGames(list) {
+      grid.innerHTML = "";
+      list.forEach(game => {
+        const card = document.createElement("div");
+        card.className = "game-card";
+        card.innerHTML = `
+          <div class="game-title">${game.name}</div>
+          <div class="game-desc">${game.desc}</div>
+          <a class="play-btn" href="${game.url}">Play</a>
+        `;
+        grid.appendChild(card);
+      });
+    }
 
-function randomMessage() {
-  const msg = messages[Math.floor(Math.random() * messages.length)];
-  document.getElementById("message").textContent = msg;
-}
+    renderGames(games);
 
-setInterval(randomMessage, 7000);
+    searchInput.addEventListener("input", () => {
+      const value = searchInput.value.toLowerCase();
+      renderGames(games.filter(g => g.name.toLowerCase().includes(value)));
+    });
 
-/* ================= GAME LOOP ================= */
-function update() {
-  if (keys["w"]) player.y -= player.speed;
-  if (keys["s"]) player.y += player.speed;
-  if (keys["a"]) player.x -= player.speed;
-  if (keys["d"]) player.x += player.speed;
-}
+    /* Panic Key */
+    document.addEventListener("keydown", (e) => {
+      const tag = document.activeElement.tagName.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
 
-function draw() {
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // player (temporary placeholder)
-  ctx.fillStyle = "#b91c1c";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
-
-/* ================= PANIC KEY ================= */
-document.addEventListener("keydown", e => {
-  if (e.key.toLowerCase() === "p") {
-    location.replace("https://stsei.de");
-  }
-});
-</script>
+      if (e.key.toLowerCase() === "p") {
+        window.location.replace("https://stsei.de");
+      }
+    });
+  </script>
 
 </body>
 </html>
