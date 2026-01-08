@@ -2,50 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Horror Game</title>
+<title>Infinite Doors</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
   body {
     margin: 0;
-    background: black;
-    color: #e5e7eb;
+    background: #0b1220;
     font-family: Inter, sans-serif;
     overflow: hidden;
-  }
-
-  #overlay {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at center, transparent 40%, black 75%);
-    pointer-events: none;
-    animation: flicker 6s infinite;
-  }
-
-  @keyframes flicker {
-    0%, 100% { opacity: 0.35; }
-    50% { opacity: 0.45; }
-    70% { opacity: 0.3; }
+    color: #e5e7eb;
   }
 
   #ui {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 16px;
+    left: 16px;
     font-size: 0.9rem;
-    color: #9ca3af;
-    opacity: 0.85;
+    opacity: 0.9;
   }
 
   #message {
     position: fixed;
-    top: 30px;
+    bottom: 20px;
     width: 100%;
     text-align: center;
-    font-size: 1rem;
-    letter-spacing: 0.05em;
-    opacity: 0.8;
+    font-size: 0.9rem;
+    color: #9ca3af;
   }
 
   canvas {
@@ -56,10 +39,8 @@
 <body>
 
 <canvas id="game"></canvas>
-
-<div id="message">You feel like you're not alone.</div>
-<div id="ui">WASD to move · P to exit</div>
-<div id="overlay"></div>
+<div id="ui">Door <span id="doorCount">0</span></div>
+<div id="message">It feels oddly quiet.</div>
 
 <script>
 /* ================= SETUP ================= */
@@ -67,39 +48,98 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
 }
 window.addEventListener("resize", resize);
 resize();
 
+/* ================= GAME STATE ================= */
+let doorNumber = 0;
+let anomaly = null;
+let tension = 0;
+
+const messages = [
+  "Something feels off.",
+  "Did that door move?",
+  "You're not alone.",
+  "Keep going.",
+  "Don't look back."
+];
+
 /* ================= PLAYER ================= */
 const player = {
   x: canvas.width / 2,
-  y: canvas.height / 2,
-  speed: 2,
-  size: 8
+  y: canvas.height - 120,
+  speed: 3,
+  size: 14
 };
 
 const keys = {};
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-/* ================= AMBIENT TEXT ================= */
-const messages = [
-  "You hear something behind you.",
-  "The lights flicker.",
-  "Something moved.",
-  "You're being watched.",
-  "Don't turn around."
-];
+/* ================= DOOR ================= */
+const door = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  w: 90,
+  h: 140
+};
 
-function randomMessage() {
-  const msg = messages[Math.floor(Math.random() * messages.length)];
-  document.getElementById("message").textContent = msg;
+function nextDoor() {
+  doorNumber++;
+  tension += 0.2;
+
+  // 30% chance of anomaly after door 5
+  if (doorNumber > 5 && Math.random() < 0.3) {
+    anomaly = Math.random() < 0.5 ? "eyes" : "shadow";
+    document.getElementById("message").textContent = "Something changed...";
+  } else {
+    anomaly = null;
+    document.getElementById("message").textContent =
+      messages[Math.floor(Math.random() * messages.length)];
+  }
+
+  player.y = canvas.height - 120;
+  document.getElementById("doorCount").textContent = doorNumber;
 }
 
-setInterval(randomMessage, 7000);
+/* ================= DRAWING ================= */
+function drawDoor() {
+  ctx.fillStyle = "#3b2f2f";
+  ctx.fillRect(door.x - door.w/2, door.y - door.h/2, door.w, door.h);
+
+  // door knob
+  ctx.fillStyle = "#d1d5db";
+  ctx.beginPath();
+  ctx.arc(door.x + 30, door.y + 10, 6, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawAnomaly() {
+  if (!anomaly) return;
+
+  if (anomaly === "eyes") {
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(door.x - 20, door.y - 40, 6, 0, Math.PI * 2);
+    ctx.arc(door.x + 20, door.y - 40, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (anomaly === "shadow") {
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(door.x - 50, door.y - 70, 100, 140);
+  }
+}
+
+function drawPlayer() {
+  ctx.fillStyle = "#b91c1c";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+  ctx.fill();
+}
 
 /* ================= GAME LOOP ================= */
 function update() {
@@ -107,17 +147,23 @@ function update() {
   if (keys["s"]) player.y += player.speed;
   if (keys["a"]) player.x -= player.speed;
   if (keys["d"]) player.x += player.speed;
+
+  // reach door
+  if (
+    player.y < door.y + door.h/2 &&
+    Math.abs(player.x - door.x) < door.w/2
+  ) {
+    nextDoor();
+  }
 }
 
 function draw() {
-  ctx.fillStyle = "black";
+  ctx.fillStyle = "#0b1220";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // player (temporary placeholder)
-  ctx.fillStyle = "#b91c1c";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-  ctx.fill();
+  drawDoor();
+  drawAnomaly();
+  drawPlayer();
 }
 
 function loop() {
@@ -129,7 +175,7 @@ function loop() {
 loop();
 
 /* ================= PANIC KEY ================= */
-document.addEventListener("keydown", e => {
+addEventListener("keydown", e => {
   if (e.key.toLowerCase() === "p") {
     location.replace("https://stsei.de");
   }
