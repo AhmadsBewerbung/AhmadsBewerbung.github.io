@@ -2,180 +2,164 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Infinite Doors</title>
+<title>Infinite Doors 3D</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
   body {
     margin: 0;
-    background: #0b1220;
-    font-family: Inter, sans-serif;
     overflow: hidden;
-    color: #e5e7eb;
+    background: black;
+    font-family: Arial, sans-serif;
   }
 
   #ui {
     position: fixed;
-    top: 16px;
-    left: 16px;
-    font-size: 0.9rem;
-    opacity: 0.9;
+    top: 15px;
+    left: 15px;
+    color: white;
+    font-size: 14px;
+    opacity: 0.85;
   }
 
-  #message {
+  #center {
     position: fixed;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
-    font-size: 0.9rem;
-    color: #9ca3af;
-  }
-
-  canvas {
-    display: block;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 14px;
+    pointer-events: none;
   }
 </style>
 </head>
 <body>
 
-<canvas id="game"></canvas>
-<div id="ui">Door <span id="doorCount">0</span></div>
-<div id="message">It feels oddly quiet.</div>
+<div id="ui">Door: <span id="doorNum">0</span></div>
+<div id="center">Click to start</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-/* ================= SETUP ================= */
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+/* ================= SCENE ================= */
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x050508, 5, 30);
 
-function resize() {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 
-/* ================= GAME STATE ================= */
-let doorNumber = 0;
-let anomaly = null;
-let tension = 0;
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x050508);
+document.body.appendChild(renderer.domElement);
 
-const messages = [
-  "Something feels off.",
-  "Did that door move?",
-  "You're not alone.",
-  "Keep going.",
-  "Don't look back."
-];
+/* ================= LIGHTING ================= */
+const ambient = new THREE.AmbientLight(0x404040, 0.6);
+scene.add(ambient);
+
+const light = new THREE.PointLight(0xffffff, 1.2, 15);
+light.position.set(0, 3, 2);
+scene.add(light);
+
+/* ================= FLOOR ================= */
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 200),
+  new THREE.MeshStandardMaterial({ color: 0x1a1a2a })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
 
 /* ================= PLAYER ================= */
-const player = {
-  x: canvas.width / 2,
-  y: canvas.height - 120,
-  speed: 3,
-  size: 14
-};
+camera.position.set(0, 1.6, 5);
 
+const velocity = new THREE.Vector3();
 const keys = {};
-addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-/* ================= DOOR ================= */
-const door = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-  w: 90,
-  h: 140
-};
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-function nextDoor() {
-  doorNumber++;
-  tension += 0.2;
+/* ================= DOORS ================= */
+let doorIndex = 0;
+const doors = [];
 
-  // 30% chance of anomaly after door 5
-  if (doorNumber > 5 && Math.random() < 0.3) {
-    anomaly = Math.random() < 0.5 ? "eyes" : "shadow";
-    document.getElementById("message").textContent = "Something changed...";
-  } else {
-    anomaly = null;
-    document.getElementById("message").textContent =
-      messages[Math.floor(Math.random() * messages.length)];
-  }
-
-  player.y = canvas.height - 120;
-  document.getElementById("doorCount").textContent = doorNumber;
+function spawnDoor(z) {
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 3, 0.2),
+    new THREE.MeshStandardMaterial({ color: 0x4b2f2f })
+  );
+  door.position.set(0, 1.5, z);
+  door.userData.isDoor = true;
+  scene.add(door);
+  doors.push(door);
 }
 
-/* ================= DRAWING ================= */
-function drawDoor() {
-  ctx.fillStyle = "#3b2f2f";
-  ctx.fillRect(door.x - door.w/2, door.y - door.h/2, door.w, door.h);
+spawnDoor(0);
 
-  // door knob
-  ctx.fillStyle = "#d1d5db";
-  ctx.beginPath();
-  ctx.arc(door.x + 30, door.y + 10, 6, 0, Math.PI * 2);
-  ctx.fill();
-}
+/* ================= POINTER LOCK ================= */
+document.body.addEventListener("click", () => {
+  document.body.requestPointerLock();
+  document.getElementById("center").style.display = "none";
+});
 
-function drawAnomaly() {
-  if (!anomaly) return;
+let yaw = 0;
+let pitch = 0;
 
-  if (anomaly === "eyes") {
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(door.x - 20, door.y - 40, 6, 0, Math.PI * 2);
-    ctx.arc(door.x + 20, door.y - 40, 6, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  if (anomaly === "shadow") {
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(door.x - 50, door.y - 70, 100, 140);
-  }
-}
-
-function drawPlayer() {
-  ctx.fillStyle = "#b91c1c";
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-  ctx.fill();
-}
+document.addEventListener("mousemove", e => {
+  if (document.pointerLockElement !== document.body) return;
+  yaw -= e.movementX * 0.002;
+  pitch -= e.movementY * 0.002;
+  pitch = Math.max(-1.5, Math.min(1.5, pitch));
+  camera.rotation.set(pitch, yaw, 0);
+});
 
 /* ================= GAME LOOP ================= */
 function update() {
-  if (keys["w"]) player.y -= player.speed;
-  if (keys["s"]) player.y += player.speed;
-  if (keys["a"]) player.x -= player.speed;
-  if (keys["d"]) player.x += player.speed;
+  velocity.set(0, 0, 0);
 
-  // reach door
-  if (
-    player.y < door.y + door.h/2 &&
-    Math.abs(player.x - door.x) < door.w/2
-  ) {
-    nextDoor();
-  }
+  if (keys["w"]) velocity.z -= 0.05;
+  if (keys["s"]) velocity.z += 0.05;
+  if (keys["a"]) velocity.x -= 0.05;
+  if (keys["d"]) velocity.x += 0.05;
+
+  velocity.applyEuler(camera.rotation);
+  camera.position.add(velocity);
+
+  // door interaction
+  doors.forEach((door, i) => {
+    if (
+      camera.position.distanceTo(door.position) < 1.5 &&
+      camera.position.z < door.position.z
+    ) {
+      scene.remove(door);
+      doors.splice(i, 1);
+      doorIndex++;
+      document.getElementById("doorNum").textContent = doorIndex;
+      spawnDoor(door.position.z - 8 - Math.random() * 4);
+    }
+  });
 }
 
-function draw() {
-  ctx.fillStyle = "#0b1220";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  drawDoor();
-  drawAnomaly();
-  drawPlayer();
-}
-
-function loop() {
+function animate() {
+  requestAnimationFrame(animate);
   update();
-  draw();
-  requestAnimationFrame(loop);
+  renderer.render(scene, camera);
 }
+animate();
 
-loop();
+/* ================= RESIZE ================= */
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
 
 /* ================= PANIC KEY ================= */
-addEventListener("keydown", e => {
+document.addEventListener("keydown", e => {
   if (e.key.toLowerCase() === "p") {
     location.replace("https://stsei.de");
   }
