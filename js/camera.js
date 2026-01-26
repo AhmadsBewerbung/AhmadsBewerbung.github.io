@@ -1,26 +1,17 @@
-const THREE = window.THREE
+export const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 
-export class ThirdPersonCamera {
-  constructor(camera, player) {
-    this.camera = camera
-    this.player = player
-    this.rotation = { x: 0, y: 0 }
+camera.position.set(0, 4, 6);
 
-    document.addEventListener('mousemove', e => {
-      this.rotation.y -= e.movementX * 0.002
-      this.rotation.x -= e.movementY * 0.002
-      this.rotation.x = Math.max(-1.2, Math.min(1.2, this.rotation.x))
-    })
-  }
-
-  update() {
-    const offset = new THREE.Vector3(
-      Math.sin(this.rotation.y) * 6,
-      3 + this.rotation.x * 2,
-      Math.cos(this.rotation.y) * 6
-    )
-
-    this.camera.position.copy(this.player.mesh.position).add(offset)
-    this.camera.lookAt(this.player.mesh.position)
-  }
+export function updateCamera(dt) {
+  const target = player.position.clone().add(new THREE.Vector3(0, 2, 0));
+  camera.position.lerp(
+    target.clone().add(new THREE.Vector3(0, 3, 6)),
+    0.1
+  );
+  camera.lookAt(target);
 }
