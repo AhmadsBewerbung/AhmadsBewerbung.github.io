@@ -1,5 +1,5 @@
 import { initScene, scene, renderer } from './scene.js';
-import { player, updatePlayer } from './player.js';
+import { initPlayer, updatePlayer } from './player.js';
 import { camera, updateCamera } from './camera.js';
 import { input } from './input.js';
 import { initUI, updateHUD } from './ui.js';
@@ -10,6 +10,7 @@ let last = 0;
 
 function loop(t) {
   requestAnimationFrame(loop);
+
   const dt = (t - last) / 1000;
   last = t;
 
@@ -24,5 +25,6 @@ function loop(t) {
 }
 
 initScene();
+initPlayer();   // ← THIS WAS MISSING
 initUI();
 requestAnimationFrame(loop);
