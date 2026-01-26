@@ -1,3 +1,5 @@
+const THREE = window.THREE
+
 export class ThirdPersonCamera {
   constructor(camera, player) {
     this.camera = camera
