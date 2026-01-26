@@ -1,5 +1,3 @@
-// js/ui.js
-
 const ui = document.getElementById('ui-root');
 
 export function initUI() {
@@ -22,6 +20,4 @@ export function initUI() {
   `;
 }
 
-export function updateHUD() {
-  // later: health, mats, weapon slots
-}
+export function updateHUD() {}
