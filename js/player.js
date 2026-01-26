@@ -1,41 +1,36 @@
-const THREE = window.THREE
+// js/player.js
 
-export class Player {
-  constructor(scene) {
-    this.mesh = new THREE.Group()
-    this.speed = 0.15
-    this.velocityY = 0
-    this.health = 100
+import { scene } from './scene.js';
+import { input } from './input.js';
 
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1.5, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0x4fa3ff })
-    )
-    body.position.y = 1
+export const player = {
+  position: new THREE.Vector3(0, 1, 0),
+  velocity: new THREE.Vector3(),
+  speed: 8,
+  sprint: 14
+};
 
-    const head = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8, 0.8, 0.8),
-      new THREE.MeshStandardMaterial({ color: 0xffccaa })
-    )
-    head.position.y = 2.2
+// visible low-poly player
+const mesh = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 2, 1),
+  new THREE.MeshStandardMaterial({ color: 0xdedede })
+);
+mesh.position.copy(player.position);
+scene.add(mesh);
 
-    this.mesh.add(body, head)
-    scene.add(this.mesh)
+export function updatePlayer(dt) {
+  const move = new THREE.Vector3();
 
-    this.keys = {}
-    window.addEventListener('keydown', e => this.keys[e.key.toLowerCase()] = true)
-    window.addEventListener('keyup', e => this.keys[e.key.toLowerCase()] = false)
+  if (input.keys.w) move.z -= 1;
+  if (input.keys.s) move.z += 1;
+  if (input.keys.a) move.x -= 1;
+  if (input.keys.d) move.x += 1;
+
+  if (move.lengthSq() > 0) {
+    move.normalize();
+    const speed = input.keys.shift ? player.sprint : player.speed;
+    player.position.add(move.multiplyScalar(speed * dt));
   }
 
-  update() {
-    let x = 0
-    let z = 0
-    if (this.keys.w) z--
-    if (this.keys.s) z++
-    if (this.keys.a) x--
-    if (this.keys.d) x++
-
-    this.mesh.position.x += x * this.speed
-    this.mesh.position.z += z * this.speed
-  }
+  mesh.position.copy(player.position);
 }
