@@ -1,35 +1,31 @@
-const THREE = window.THREE
+const builds = [];
+let currentType = 'wall';
 
-export class BuildingSystem {
-  constructor(scene, player) {
-    this.scene = scene
-    this.player = player
-    this.builds = []
-    this.type = null
+const materials = {
+  wood: new THREE.MeshStandardMaterial({ color: 0x9b6b3d })
+};
 
-    window.addEventListener('keydown', e => {
-      if (e.key === 'y') this.type = 'wall'
-      if (e.key === 'x') this.type = 'floor'
-      if (e.key === 'c') this.type = 'stair'
-      if (e.key === 'v') this.type = 'cone'
-    })
+export function updateBuilding() {
+  if (input.keys.y) currentType = 'wall';
+  if (input.keys.x) currentType = 'floor';
 
-    window.addEventListener('mousedown', () => {
-      if (!this.type) return
-      this.place()
-    })
+  if (input.keys.mouse0) {
+    placeBuild();
   }
+}
 
-  place() {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(2, 2, 0.2),
-      new THREE.MeshStandardMaterial({ color: 0x8b5a2b })
-    )
-    mesh.position.copy(this.player.mesh.position)
-    mesh.position.y += 1
-    this.scene.add(mesh)
-    this.builds.push(mesh)
-  }
+function placeBuild() {
+  const geo = currentType === 'wall'
+    ? new THREE.BoxGeometry(3, 3, 0.3)
+    : new THREE.BoxGeometry(3, 0.3, 3);
 
-  update() {}
+  const mesh = new THREE.Mesh(geo, materials.wood);
+  mesh.position
+    .copy(player.position)
+    .divideScalar(3)
+    .floor()
+    .multiplyScalar(3);
+
+  scene.add(mesh);
+  builds.push(mesh);
 }
