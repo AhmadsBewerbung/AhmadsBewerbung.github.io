@@ -1,57 +1,28 @@
-import { Player } from './player.js'
-import { ThirdPersonCamera } from './camera.js'
-import { Weapons } from './weapons.js'
-import { BuildingSystem } from './building.js'
-import { EditingSystem } from './editing.js'
-import { UI } from './ui.js'
+import { initScene, scene, renderer } from './scene.js';
+import { player, updatePlayer } from './player.js';
+import { camera, updateCamera } from './camera.js';
+import { input } from './input.js';
+import { initUI, updateHUD } from './ui.js';
+import { updateBuilding } from './building.js';
+import { updateEditing } from './editing.js';
 
-const canvas = document.getElementById('game')
+let last = 0;
 
-export const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x87ceeb)
+function loop(t) {
+  requestAnimationFrame(loop);
+  const dt = (t - last) / 1000;
+  last = t;
 
-export const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-)
+  input.update();
+  updatePlayer(dt);
+  updateCamera(dt);
+  updateBuilding(dt);
+  updateEditing(dt);
+  updateHUD();
 
-export const renderer = new THREE.WebGLRenderer({ canvas })
-renderer.setSize(window.innerWidth, window.innerHeight)
-
-const light = new THREE.DirectionalLight(0xffffff, 1)
-light.position.set(5, 10, 5)
-scene.add(light)
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.4))
-
-// Ground
-const ground = new THREE.Mesh(
-  new THREE.BoxGeometry(200, 1, 200),
-  new THREE.MeshStandardMaterial({ color: 0x3aa655 })
-)
-ground.position.y = -0.5
-scene.add(ground)
-
-// Systems
-const player = new Player(scene)
-const cameraController = new ThirdPersonCamera(camera, player)
-const weapons = new Weapons(player, scene)
-const building = new BuildingSystem(scene, player)
-const editing = new EditingSystem(building)
-const ui = new UI(player, weapons)
-
-// Game loop
-function loop() {
-  requestAnimationFrame(loop)
-
-  player.update()
-  weapons.update()
-  building.update()
-  cameraController.update()
-
-  renderer.render(scene, camera)
+  renderer.render(scene, camera);
 }
 
-loop()
+initScene();
+initUI();
+requestAnimationFrame(loop);
