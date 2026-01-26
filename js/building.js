@@ -1,3 +1,5 @@
+const THREE = window.THREE
+
 export class BuildingSystem {
   constructor(scene, player) {
     this.scene = scene
@@ -12,7 +14,7 @@ export class BuildingSystem {
       if (e.key === 'v') this.type = 'cone'
     })
 
-    window.addEventListener('mousedown', e => {
+    window.addEventListener('mousedown', () => {
       if (!this.type) return
       this.place()
     })
@@ -20,7 +22,7 @@ export class BuildingSystem {
 
   place() {
     const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(2,2,0.2),
+      new THREE.BoxGeometry(2, 2, 0.2),
       new THREE.MeshStandardMaterial({ color: 0x8b5a2b })
     )
     mesh.position.copy(this.player.mesh.position)
