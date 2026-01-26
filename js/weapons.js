@@ -1,3 +1,5 @@
+const THREE = window.THREE
+
 export class Weapons {
   constructor(player, scene) {
     this.player = player
@@ -16,7 +18,6 @@ export class Weapons {
 
   fire() {
     if (this.cooldown > 0) return
-
     this.cooldown = this.current === 2 ? 30 : 10
 
     const bullet = new THREE.Mesh(
