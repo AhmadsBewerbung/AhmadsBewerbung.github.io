@@ -4,8 +4,8 @@ export class Weapons {
   constructor(player, scene) {
     this.player = player
     this.scene = scene
-    this.current = 1
     this.cooldown = 0
+    this.current = 1
 
     window.addEventListener('keydown', e => {
       if (e.key >= '1' && e.key <= '3') {
@@ -18,17 +18,18 @@ export class Weapons {
 
   fire() {
     if (this.cooldown > 0) return
-    this.cooldown = this.current === 2 ? 30 : 10
+    this.cooldown = 15
 
     const bullet = new THREE.Mesh(
       new THREE.SphereGeometry(0.1),
       new THREE.MeshBasicMaterial({ color: 0xffff00 })
     )
+
     bullet.position.copy(this.player.mesh.position)
     bullet.position.y += 1.5
     this.scene.add(bullet)
 
-    setTimeout(() => this.scene.remove(bullet), 1000)
+    setTimeout(() => this.scene.remove(bullet), 500)
   }
 
   update() {
