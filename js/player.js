@@ -1,4 +1,5 @@
 // js/player.js
+import * as THREE from 'three';
 import { input } from './input.js';
 import { scene } from './scene.js';
 
@@ -15,6 +16,7 @@ export function initPlayer() {
     new THREE.BoxGeometry(1, 2, 1),
     new THREE.MeshStandardMaterial({ color: 0xdddddd })
   );
+
   mesh.position.copy(player.position);
   scene.add(mesh);
 }
