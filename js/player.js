@@ -1,24 +1,27 @@
 // js/player.js
-
-import { scene } from './scene.js';
 import { input } from './input.js';
+import { scene } from './scene.js';
 
 export const player = {
   position: new THREE.Vector3(0, 1, 0),
-  velocity: new THREE.Vector3(),
   speed: 8,
   sprint: 14
 };
 
-// visible low-poly player
-const mesh = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 2, 1),
-  new THREE.MeshStandardMaterial({ color: 0xdedede })
-);
-mesh.position.copy(player.position);
-scene.add(mesh);
+let mesh = null;
+
+export function initPlayer() {
+  mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 2, 1),
+    new THREE.MeshStandardMaterial({ color: 0xdddddd })
+  );
+  mesh.position.copy(player.position);
+  scene.add(mesh);
+}
 
 export function updatePlayer(dt) {
+  if (!mesh) return;
+
   const move = new THREE.Vector3();
 
   if (input.keys.w) move.z -= 1;
