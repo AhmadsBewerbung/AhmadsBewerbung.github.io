@@ -1,15 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Ahmads Bewerbung</title>
+  <title>Ahmads Bewerbung (diese arbeiter haben mir immernocht nicht geantwortet)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="ui"></div>
+  <div id="ui-root"></div>
   <canvas id="game"></canvas>
 
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <!-- Three.js CDN (safe for GitHub Pages) -->
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    window.THREE = THREE;
+  </script>
 
   <script type="module" src="js/main.js"></script>
 </body>
