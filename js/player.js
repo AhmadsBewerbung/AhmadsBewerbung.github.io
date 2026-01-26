@@ -1,3 +1,5 @@
+const THREE = window.THREE
+
 export class Player {
   constructor(scene) {
     this.speed = 0.15
@@ -7,13 +9,13 @@ export class Player {
     this.mesh = new THREE.Group()
 
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(1,1.5,0.5),
+      new THREE.BoxGeometry(1, 1.5, 0.5),
       new THREE.MeshStandardMaterial({ color: 0x4fa3ff })
     )
     body.position.y = 1
 
     const head = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8,0.8,0.8),
+      new THREE.BoxGeometry(0.8, 0.8, 0.8),
       new THREE.MeshStandardMaterial({ color: 0xffccaa })
     )
     head.position.y = 2.2
