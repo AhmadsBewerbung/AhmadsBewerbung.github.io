@@ -11,8 +11,10 @@ export class EditingSystem {
 
     window.addEventListener('mousedown', () => {
       if (!this.active) return
-      const last = this.building.builds.pop()
-      if (last) this.building.scene.remove(last)
+      if (this.building.builds.length === 0) return
+
+      const piece = this.building.builds.pop()
+      this.building.scene.remove(piece)
     })
   }
 }
