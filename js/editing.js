@@ -1,20 +1,12 @@
-export class EditingSystem {
-  constructor(building) {
-    this.building = building
-    this.active = false
+let editing = false;
 
-    window.addEventListener('keydown', e => {
-      if (e.key.toLowerCase() === 'q') {
-        this.active = !this.active
-      }
-    })
+export function updateEditing() {
+  if (input.keys.q) editing = true;
+  if (!editing) return;
 
-    window.addEventListener('mousedown', () => {
-      if (!this.active) return
-      if (this.building.builds.length === 0) return
-
-      const piece = this.building.builds.pop()
-      this.building.scene.remove(piece)
-    })
+  // Simple delete on click
+  if (input.keys.mouse0) {
+    const last = scene.children.pop();
+    if (last) scene.remove(last);
   }
 }
