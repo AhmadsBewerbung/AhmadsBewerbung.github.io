@@ -1,12 +1,27 @@
-let editing = false;
+// js/ui.js
 
-export function updateEditing() {
-  if (input.keys.q) editing = true;
-  if (!editing) return;
+const ui = document.getElementById('ui-root');
 
-  // Simple delete on click
-  if (input.keys.mouse0) {
-    const last = scene.children.pop();
-    if (last) scene.remove(last);
-  }
+export function initUI() {
+  ui.innerHTML = `
+    <div class="menu">
+      <h2>Ahmads Bewerbung</h2>
+      <button onclick="location.reload()">Play</button>
+      <button>Controls</button>
+      <button>Settings</button>
+    </div>
+
+    <div class="hud">
+      HP: 100<br />
+      Wood: ∞
+    </div>
+
+    <div class="easter">
+      Diese Arbeiter haben immer noch nicht geantwortet.
+    </div>
+  `;
+}
+
+export function updateHUD() {
+  // later: health, mats, weapon slots
 }
